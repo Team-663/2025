@@ -15,6 +15,7 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.ReplanningConfig;
 */
+import static edu.wpi.first.units.Units.Meter;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -46,6 +47,8 @@ import swervelib.parser.SwerveDriveConfiguration;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
+
+
 
 
 public class SwerveSubsystem extends SubsystemBase
@@ -120,7 +123,8 @@ public class SwerveSubsystem extends SubsystemBase
    */
   public SwerveSubsystem(SwerveDriveConfiguration driveCfg, SwerveControllerConfiguration controllerCfg)
   {
-    swerveDrive = new SwerveDrive(driveCfg, controllerCfg, Constants.MAX_SPEED);
+    swerveDrive = new SwerveDrive(driveCfg, controllerCfg, Constants.MAX_SPEED,new Pose2d(new Translation2d(Meter.of(2), Meter.of(0)),
+    Rotation2d.fromDegrees(0)));
   }
 
   /**
@@ -265,7 +269,7 @@ public class SwerveSubsystem extends SubsystemBase
                                                                       headingX.getAsDouble(),
                                                                       headingY.getAsDouble(),
                                                                       swerveDrive.getOdometryHeading().getRadians(),
-                                                                      swerveDrive.getMaximumVelocity()));
+                                                                      swerveDrive.getMaximumChassisVelocity()));
     });
   }
 
@@ -286,7 +290,7 @@ public class SwerveSubsystem extends SubsystemBase
                                                                       translationY.getAsDouble(),
                                                                       rotation.getAsDouble() * Math.PI,
                                                                       swerveDrive.getOdometryHeading().getRadians(),
-                                                                      swerveDrive.getMaximumVelocity()));
+                                                                      swerveDrive.getMaximumChassisVelocity()));
     });
   }
 
@@ -345,17 +349,6 @@ public class SwerveSubsystem extends SubsystemBase
                                  );
   }
 
-  /**
-   * Sets the maximum speed of the swerve drive.
-   *
-   * @param maximumSpeedInMetersPerSecond the maximum speed to set for the swerve drive in meters per second
-   */
-  public void setMaximumSpeed(double maximumSpeedInMetersPerSecond)
-  {
-    swerveDrive.setMaximumSpeed(maximumSpeedInMetersPerSecond,
-                                false,
-                                swerveDrive.swerveDriveConfiguration.physicalCharacteristics.optimalVoltage);
-  }
 
   /**
    * Replaces the swerve module feedforward with a new SimpleMotorFeedforward object.
@@ -382,9 +375,9 @@ public class SwerveSubsystem extends SubsystemBase
     return run(() -> {
       // Make the robot move
       swerveDrive.drive(SwerveMath.scaleTranslation(new Translation2d(
-                            translationX.getAsDouble() * swerveDrive.getMaximumVelocity(),
-                            translationY.getAsDouble() * swerveDrive.getMaximumVelocity()), 0.8),
-                        Math.pow(angularRotationX.getAsDouble(), 3) * swerveDrive.getMaximumAngularVelocity(),
+                            translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()), 0.8),
+                        Math.pow(angularRotationX.getAsDouble(), 3) * swerveDrive.getMaximumChassisAngularVelocity(),
                         true,
                         false);
     });
