@@ -27,9 +27,12 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -37,6 +40,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
 import frc.robot.Constants;
 import frc.robot.Constants.AutonConstants;
+import frc.robot.Constants.DrivebaseConstants;
 import swervelib.SwerveController;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
@@ -53,7 +57,14 @@ import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 public class SwerveSubsystem extends SubsystemBase
 {
-
+  
+  //private ShuffleboardTab tab = Shuffleboard.getTab("Calibration");
+  //private GenericEntry sbtSwvBackLeftRawAbs = tab.add("SwerveB-L-RawAbsEnc", 0).getEntry();
+  //private GenericEntry sbtSwvBackLeftAdjAbs = tab.add("SwerveB-L-AdjAbsEnc", 0).getEntry();
+  //private GenericEntry sbtSwvBackLeftRawAngle = tab.add("SwerveB-L-RawAngleEnc", 0).getEntry();
+  //private GenericEntry sbtSwvBackLeftAngleSet = tab.add("SwerveB-L-AngleSet", 0).getEntry();
+  //private GenericEntry sbtSwvLeftRearAngle2 = tab.add("Laser2 Distance", 0).getEntry();
+  //private GenericEntry sbtShooterSpeed = tab.add("Shooter RPM", 0).getEntry();
   /**
    * PhotonVision class to keep an accurate odometry.
    */
@@ -81,12 +92,13 @@ public class SwerveSubsystem extends SubsystemBase
     // Angle conversion factor is 360 / (GEAR RATIO * ENCODER RESOLUTION)
     //  In this case the gear ratio is 12.8 motor revolutions per wheel rotation.
     //  The encoder resolution per motor revolution is 1 per motor revolution.
-    double angleConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(12.8);
+    
+    double angleConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(Constants.DrivebaseConstants.SWERVE_STEER_GEAR_RATIO);
     // Motor conversion factor is (PI * WHEEL DIAMETER IN METERS) / (GEAR RATIO * ENCODER RESOLUTION).
     //  In this case the wheel diameter is 4 inches, which must be converted to meters to get meters/second.
     //  The gear ratio is 6.75 motor revolutions per wheel rotation.
     //  The encoder resolution per motor revolution is 1 per motor revolution.
-    double driveConversionFactor = SwerveMath.calculateMetersPerRotation(Units.inchesToMeters(4), 6.75);
+    double driveConversionFactor = SwerveMath.calculateMetersPerRotation(Units.inchesToMeters(DrivebaseConstants.SWERVE_WHEEL_DIAMETER_INCHES), DrivebaseConstants.SWERVE_DRIVE_GEAR_RATIO);
     System.out.println("\"conversionFactors\": {");
     System.out.println("\t\"angle\": {\"factor\": " + angleConversionFactor + " },");
     System.out.println("\t\"drive\": {\"factor\": " + driveConversionFactor + " }");
@@ -98,7 +110,7 @@ public class SwerveSubsystem extends SubsystemBase
     {
       swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.MAX_SPEED);
       // Alternative method if you don't want to supply the conversion factor via JSON files.
-      // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
+      //swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.MAX_SPEED, angleConversionFactor, driveConversionFactor);
     } catch (Exception e)
     {
       throw new RuntimeException(e);
@@ -145,6 +157,8 @@ public class SwerveSubsystem extends SubsystemBase
       swerveDrive.updateOdometry();
       //vision.updatePoseEstimation(swerveDrive);
     }
+
+    //updateShuffleboard();
   }
 
   @Override
@@ -152,6 +166,14 @@ public class SwerveSubsystem extends SubsystemBase
   {
   }
 
+  private void updateShuffleboard()
+  {
+     //sbtSwvLeftRearAngleRaw.setDouble(1.0);
+     //sbtSwvBackLeftAdjAbs.setDouble(swerveDrive.getModules()[0].)
+
+     //sbtSwvLeftRearAngle2.setDouble(1.0);
+  
+  }
   /**
    * Setup AutoBuilder for PathPlanner.
    */

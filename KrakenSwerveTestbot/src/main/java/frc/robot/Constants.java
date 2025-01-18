@@ -42,9 +42,14 @@ public final class Constants {
    }
 
    public static final class DrivebaseConstants {
-
+      // was drive factor from physicalproperties.json was 0.03593
       // Hold time on motor brakes when disabled
       public static final double WHEEL_LOCK_TIME = 10; // seconds
+
+      public static final double SWERVE_STEER_GEAR_RATIO = 21.4285714286; // seems like this should be 22 something no 12.8
+      public static final double SWERVE_DRIVE_GEAR_RATIO = 8.14;
+      public static final double SWERVE_WHEEL_DIAMETER_METERS = 0.09398;
+      public static final double SWERVE_WHEEL_DIAMETER_INCHES = 3.66522;
    }
 
    public static class AutonConstants {
