@@ -108,9 +108,9 @@ public class SwerveSubsystem extends SubsystemBase
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try
     {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.MAX_SPEED);
+      //swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.MAX_SPEED);
       // Alternative method if you don't want to supply the conversion factor via JSON files.
-      //swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.MAX_SPEED, angleConversionFactor, driveConversionFactor);
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.MAX_SPEED, angleConversionFactor, driveConversionFactor);
     } catch (Exception e)
     {
       throw new RuntimeException(e);
@@ -403,6 +403,15 @@ public class SwerveSubsystem extends SubsystemBase
                         true,
                         false);
     });
+
+    /* from 2024:
+             // Drive using raw values.
+         swerve.drive(new Translation2d(xVelocity * Constants.Drivebase.MAX_ROBOT_SPEED, yVelocity * Constants.Drivebase.MAX_ROBOT_SPEED),
+               angVelocity * controller.config.maxAngularVelocity,
+               driveMode.getAsBoolean(), isOpenLoop);
+     * 
+     * 
+     */
   }
 
   /**
