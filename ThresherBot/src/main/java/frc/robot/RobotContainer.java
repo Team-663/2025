@@ -34,9 +34,9 @@ public class RobotContainer {
    private final SwerveSubsystem drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
 
    SwerveInputStream driveAngularVelocity = SwerveInputStream.of(drivebase.getSwerveDrive(),
-         () -> driverXbox.getLeftY() * -1,
-         () -> driverXbox.getLeftX() * -1)
-         .withControllerRotationAxis(driverXbox::getRightX)
+         () -> driverXbox.getLeftY() *-1.0,
+         () -> driverXbox.getLeftX() *-1.0)
+         .withControllerRotationAxis(()->driverXbox.getRightX() * -1.0)
          .deadband(OperatorConstants.DEADBAND)
          .scaleTranslation(0.8)
          .allianceRelativeControl(true);
