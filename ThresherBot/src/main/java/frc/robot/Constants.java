@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-//import com.pathplanner.lib.util.PIDConstants;
-
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import swervelib.math.Matter;
@@ -23,36 +21,22 @@ import swervelib.math.Matter;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
-
    public static final double ROBOT_MASS = (148 - 20.3) * 0.453592; // 32lbs * kg per pound
    public static final Matter CHASSIS = new Matter(new Translation3d(0, 0, Units.inchesToMeters(8)), ROBOT_MASS);
    public static final double LOOP_TIME = 0.13; // s, 20ms + 110ms sprk max velocity lag
-   public static final double MAX_SPEED = Units.feetToMeters(14.5);
+
+   public static class DrivebaseConstants {
+      public static final double MAX_SPEED = Units.feetToMeters(14.5);
+      public static final double WHEEL_LOCK_TIME = 10; // seconds
+
+   }
 
    public static class OperatorConstants {
       public static final int kDriverControllerPort = 0;
-      public static final int kArmOPeratorControllerPort = 1;
 
-      // Joystick Deadband
-      public static final double LEFT_X_DEADBAND = 0.1;
+      public static final double DEADBAND = 0.1;
       public static final double LEFT_Y_DEADBAND = 0.1;
       public static final double RIGHT_X_DEADBAND = 0.1;
       public static final double TURN_CONSTANT = 6;
-
-   }
-
-   public static final class DrivebaseConstants {
-      // was drive factor from physicalproperties.json was 0.03593
-      // Hold time on motor brakes when disabled
-      public static final double WHEEL_LOCK_TIME = 10; // seconds
-
-      public static final double SWERVE_STEER_GEAR_RATIO = 21.4285714286; // seems like this should be 22 something no 12.8
-      public static final double SWERVE_DRIVE_GEAR_RATIO = 8.14;
-      public static final double SWERVE_WHEEL_DIAMETER_METERS = 0.09398;
-      public static final double SWERVE_WHEEL_DIAMETER_INCHES = 3.66522;
-   }
-
-   public static class AutonConstants {
-
    }
 }

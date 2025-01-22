@@ -31,7 +31,7 @@ public class RobotContainer {
    private final SwerveSubsystem drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
          "swerve"));
 
-   AbsoluteDriveAdv closedAbsoluteDriveAdv = new AbsoluteDriveAdv(drivebase,
+      AbsoluteDriveAdv closedAbsoluteDriveAdv = new AbsoluteDriveAdv(drivebase,
          () -> -MathUtil.applyDeadband(driverXbox.getLeftY(),
                OperatorConstants.LEFT_Y_DEADBAND),
          () -> -MathUtil.applyDeadband(driverXbox.getLeftX(),
@@ -43,10 +43,18 @@ public class RobotContainer {
          driverXbox.getHID()::getXButtonPressed,
          driverXbox.getHID()::getBButtonPressed);
 
-   Command driveFieldOrientedAnglularVelocity = drivebase.driveCommand(
+      Command driveFieldOrientedAnglularVelocity = drivebase.driveCommand(
          () -> MathUtil.applyDeadband(driverXbox.getLeftY() * -1, OperatorConstants.LEFT_Y_DEADBAND),
          () -> MathUtil.applyDeadband(driverXbox.getLeftX() * -1, OperatorConstants.LEFT_X_DEADBAND),
          () -> driverXbox.getRightX() * -1);
+
+      // Don't use this it is terrifying
+      Command driveFieldOrientedDirectAngle = drivebase.driveCommand(
+            () -> MathUtil.applyDeadband(driverXbox.getLeftY(), OperatorConstants.LEFT_Y_DEADBAND),
+            () -> MathUtil.applyDeadband(driverXbox.getLeftX(), OperatorConstants.LEFT_X_DEADBAND),
+            () -> driverXbox.getRightX(),
+            () -> driverXbox.getRightY());
+
 
    /**
     * The container for the robot. Contains subsystems, OI devices, and commands.
