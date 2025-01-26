@@ -41,7 +41,7 @@ public class CenterOnAprilTag extends Command {
   public void execute() {
     // Get the pose of the AprilTag relative to the camera using LimelightHelpers
     LimelightHelpers.PoseEstimate limelightEstimate = 
-        LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight"); // Replace "limelight" with your Limelight's name
+        LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-ps"); // Replace "limelight" with your Limelight's name
 
     if (limelightEstimate.tagCount >= 1) {
       Pose2d tagPose = limelightEstimate.pose;
