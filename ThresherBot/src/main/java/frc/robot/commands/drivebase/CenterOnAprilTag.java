@@ -1,7 +1,11 @@
+package frc.robot.commands.drivebase;
+
+
 import swervelib.SwerveDrive;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -14,9 +18,9 @@ public class CenterOnAprilTag extends Command {
   private final SwerveDrive swerveDrive;
 
   //Set these
-  private final PIDController xController = new PIDController(0, 0, 0);
-  private final PIDController yController = new PIDController(0, 0, 0);
-  private final PIDController rotationController = new PIDController(0, 0, 0);
+  private final PIDController xController = new PIDController(0.5, 0, 0);
+  private final PIDController yController = new PIDController(0.5, 0, 0);
+  private final PIDController rotationController = new PIDController(0.4, 0, 0.01);
 
   public CenterOnAprilTag(SwerveSubsystem swerveSubsystem) {
     this.swerveSubsystem = swerveSubsystem;
@@ -24,9 +28,9 @@ public class CenterOnAprilTag extends Command {
     addRequirements(swerveSubsystem);
 
     // Set tolerances
-    xController.setTolerance(0);
-    yController.setTolerance(0);
-    rotationController.setTolerance(0);
+    xController.setTolerance(0.05);
+    yController.setTolerance(0.05);
+    rotationController.setTolerance(0.05);
   }
 
   @Override
@@ -40,17 +44,17 @@ public class CenterOnAprilTag extends Command {
   @Override
   public void execute() {
     // Get the pose of the AprilTag relative to the camera using LimelightHelpers
-    LimelightHelpers.PoseEstimate limelightEstimate = 
-        LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-ps"); // Replace "limelight" with your Limelight's name
-
-    if (limelightEstimate.tagCount >= 1) {
-      Pose2d tagPose = limelightEstimate.pose;
+    //LimelightHelpers.PoseEstimate limelightEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-ps"); // Replace "limelight" with your Limelight's name
+    Pose3d targetPose = LimelightHelpers.getTargetPose3d_CameraSpace("limelight-ps");
+    double tagCount = LimelightHelpers.getTargetCount("limelight-ps");
+    SmartDashboard.putNumber("LLPoseTagCount", tagCount);
+    if (tagCount >= 1) {
+      //Pose2d tagPose = limelightEstimate.pose;
 
       // Calculate the error in x, y, and rotation
-      double xError = tagPose.getX();
-      double yError = tagPose.getY();
-      double rotationError = tagPose.getRotation().getRadians();
-
+      double xError = targetPose.getX();
+      double yError = targetPose.getY();
+      double rotationError = targetPose.getRotation().getAngle();
       // Calculate the PID outputs
       double xOutput = xController.calculate(xError);
       double yOutput = yController.calculate(yError);
