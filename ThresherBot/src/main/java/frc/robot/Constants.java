@@ -35,7 +35,7 @@ public final class Constants
    // FrontRightDrive/Angle: 17,  8
    // Pidgeon: 20
 
-   //CHANGE TO:
+   //CHANGE TO [DONE]:
    // BackLeftDrive/Angle:    4,  5
    // BackRightDrive/Angle:   6,  7
    // FrontLeftDrive/Angle:   8,  9
@@ -69,10 +69,17 @@ public final class Constants
 
    public static class ArmConstants
    {
+      // TODO: TUNE
       public static final double WRIST_PID_P = 2.4;
       public static final double WRIST_PID_I = 0.0;
       public static final double WRIST_PID_D = 0.1;
       public static final double WRIST_PID_FF = 0.0;
+
+
+      public static final double ELEVATOR_PID_P = 1.0;
+      public static final double ELEVATOR_PID_I = 0.0;
+      public static final double ELEVATOR_PID_D = 0.1;
+      public static final double ELEVATOR_PID_FF = 0.0;
 
    }
 }

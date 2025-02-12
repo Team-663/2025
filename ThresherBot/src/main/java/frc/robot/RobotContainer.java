@@ -9,16 +9,19 @@ import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
+import frc.robot.subsystems.Arm;
 
 import java.io.File;
 
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -28,7 +31,7 @@ import swervelib.SwerveInputStream;
 public class RobotContainer {
    // The robot's subsystems and commands are defined here...
    private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
-
+   private final Arm m_arm = new Arm();
    // Replace with CommandPS4Controller or CommandJoystick if needed
    private final CommandXboxController driverXbox = new CommandXboxController(OperatorConstants.kDriverControllerPort);
    private final SwerveSubsystem drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
@@ -70,31 +73,29 @@ public class RobotContainer {
     * {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
     * joysticks}.
     */
-   private void configureBindings() {
-
+   private void configureBindings()
+   {
+      SmartDashboard.putData("Clear CCd Faults", m_arm.clearCancoderFaultsCmd());
       Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
 
       drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
+   
+      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+      driverXbox.b().onTrue(m_arm.setElevPositionCmd(20.0));
+      driverXbox.y().onTrue(m_arm.setElevPositionCmd(0.0));
 
-      if (DriverStation.isTest()) {
-         drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity); // Overrides drive command above!
+      driverXbox.start().whileTrue(Commands.none());
+      driverXbox.back().whileTrue(Commands.none());
+      driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
+      driverXbox.rightBumper().onTrue(Commands.none());
 
-         driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-         // driverXbox.y().whileTrue(drivebase.driveToDistanceCommand(1.0, 0.2));
-         driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-         driverXbox.back().whileTrue(drivebase.centerModulesCommand());
-         driverXbox.leftBumper().onTrue(Commands.none());
-         driverXbox.rightBumper().onTrue(Commands.none());
-      } else {
-         driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-         driverXbox.x().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
+      driverXbox.leftTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getLeftTriggerAxis()))
+      .onFalse(m_arm.armStopElevator());
+      driverXbox.rightTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getRightTriggerAxis()*-1.0))
+      .onFalse(m_arm.armStopElevator());
 
-         driverXbox.start().whileTrue(Commands.none());
-         driverXbox.back().whileTrue(Commands.none());
-         driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-         driverXbox.rightBumper().onTrue(Commands.none());
-      }
+   
    }
 
    /**
