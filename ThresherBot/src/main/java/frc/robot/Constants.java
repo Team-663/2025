@@ -51,17 +51,23 @@ public final class Constants
    {
       public static final int ELEVATOR_LOW_LIMIT_SWITCH_PORT = 0;
       public static final int ELEVATOR_HIGH_LIMIT_SWITCH_PORT = 1;
+      public static final int WRIST_LOW_LIMIT_SWITCH_PORT = 2;
       // TODO: TUNE
       public static final double WRIST_PID_P = 2.4;
       public static final double WRIST_PID_I = 0.0;
       public static final double WRIST_PID_D = 0.1;
       public static final double WRIST_PID_FF = 0.0;
 
+      public static final double WRIST_MAX_OUTPUT_UP = 0.3;
+      public static final double WRIST_MAX_OUTPUT_DOWN = -0.3;
 
       public static final double ELEVATOR_PID_P = 1.0;
       public static final double ELEVATOR_PID_I = 0.0;
       public static final double ELEVATOR_PID_D = 0.1;
       public static final double ELEVATOR_PID_FF = 0.0;
+
+      public static final double ELEVATOR_MAX_OUTPUT_UP = 0.75;
+      public static final double ELEVATOR_MAX_OUTPUT_DOWN = -0.5;
 
       public static final double ELEVATOR_POS_DOWN     = 0.0;
       public static final double ELEVATOR_POS_NEUTRAL  = 15.0;

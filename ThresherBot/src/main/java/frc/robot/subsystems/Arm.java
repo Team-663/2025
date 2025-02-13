@@ -34,6 +34,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.measure.*;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -52,10 +53,13 @@ public class Arm extends SubsystemBase
    private final SparkMax m_elevatorSlave = new SparkMax(Constants.ELEVATOR_SLAVE_CAN_ID, MotorType.kBrushless);
    private final SparkClosedLoopController m_elevatorPID = m_elevatorMaster.getClosedLoopController();
    private final RelativeEncoder m_elevatorEncoder = m_elevatorMaster.getEncoder();
+   private final DigitalInput m_elevatorLimitHigh = new DigitalInput(ArmConstants.ELEVATOR_HIGH_LIMIT_SWITCH_PORT);
+   private final DigitalInput m_elevatorLimitLow = new DigitalInput(ArmConstants.ELEVATOR_LOW_LIMIT_SWITCH_PORT);
    // WRIST
    private final TalonFX m_wrist = new TalonFX(Constants.ARM_WRIST_CAN_ID);
    private final CANcoder m_wristEncoder = new CANcoder(Constants.ARM_ENCODER_CAN_ID); 
    private final PositionVoltage m_wristVoltage = new PositionVoltage(0);
+   private final DigitalInput m_wristLimitLow = new DigitalInput(ArmConstants.WRIST_LOW_LIMIT_SWITCH_PORT);
    //private final DutyCycleEncoder m_wristRevEnc = new DutyCycleEncoder(0);
    //private final LaserCan m_laser = new LaserCan(Constants.LASER_CAN_A_ID);
 
@@ -122,9 +126,35 @@ public class Arm extends SubsystemBase
       m_elevatorPID.setReference(m_elevatorSetpoint, ControlType.kPosition);
    }
 
+   private boolean allowElevatorMotion(double speed)
+   {
+      if (m_elevatorLimitHigh.get() && speed > 0)
+      {
+         return false;
+      }
+      else if (m_elevatorLimitLow.get() && speed < 0)
+      {
+         return false;
+      }
+      return true;
+   }
+
    private void moveElevatorOpenLoop(double speed)
    {
-      m_elevatorMaster.set(speed);
+      if (allowElevatorMotion(speed))
+      {
+         m_elevatorMaster.set(speed);
+      }
+      else
+      {
+         m_elevatorMaster.set(0);
+      }
+   }
+
+   private void moveWristOpenLoop(double speed)
+   {
+      m_wrist.setControl(m_dutyCycleControl.withOutput(speed)
+                                           .withLimitReverseMotion(m_wristLimitLow.get()));
    }
 
    
@@ -134,11 +164,16 @@ public class Arm extends SubsystemBase
                .withName("ClearFaults");
    }
 
-
-   public Command armByXboxCmd(DoubleSupplier elevValue)
+   public Command elevatorByXbox(DoubleSupplier elevValue)
    {
       return run( ()-> moveElevatorOpenLoop(elevValue.getAsDouble()))
-               .withName("ElevByXbox");
+               .withName("ElevatorByXbox");
+   }
+
+   public Command wristByXboxCmd(DoubleSupplier wristValue)
+   {
+      return run( ()-> moveWristOpenLoop(wristValue.getAsDouble()))
+               .withName("WristByXbox");
    }
 
    public Command armStopElevator()
@@ -190,8 +225,8 @@ public class Arm extends SubsystemBase
       fx_cfg.Slot0.kI = ArmConstants.WRIST_PID_I;
       fx_cfg.Slot0.kD = ArmConstants.WRIST_PID_D;
 
-      fx_cfg.Voltage.withPeakForwardVoltage(Volts.of(8))
-         .withPeakReverseVoltage(Volts.of(-2));
+      fx_cfg.Voltage.withPeakForwardVoltage(Volts.of(12 * ArmConstants.WRIST_MAX_OUTPUT_UP))
+         .withPeakReverseVoltage(Volts.of(12 * ArmConstants.WRIST_MAX_OUTPUT_DOWN));
 
 
       StatusCode status = m_wrist.getConfigurator().apply(fx_cfg);

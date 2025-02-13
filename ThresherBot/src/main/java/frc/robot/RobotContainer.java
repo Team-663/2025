@@ -93,7 +93,11 @@ public class RobotContainer {
       // OPERATOR CONTROLS
       operatorXbox.axisGreaterThan(XboxController.Axis.kLeftY.value, 0.1)
          .or(operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.1))
-         .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()));
+         .whileTrue(m_arm.elevatorByXbox(()->operatorXbox.getLeftY()));
+
+      operatorXbox.axisGreaterThan(XboxController.Axis.kRightY.value, 0.1)
+      .or(operatorXbox.axisLessThan(XboxController.Axis.kRightY.value, -0.1))
+         .whileTrue(m_arm.wristByXboxCmd(()->operatorXbox.getRightY()));
       //driverXbox.leftTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getLeftTriggerAxis()))
       //.onFalse(m_arm.armStopElevator());
       //driverXbox.rightTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getRightTriggerAxis()*-1.0))
