@@ -21,6 +21,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -33,7 +34,8 @@ public class RobotContainer {
    private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
    private final Arm m_arm = new Arm();
    // Replace with CommandPS4Controller or CommandJoystick if needed
-   private final CommandXboxController driverXbox = new CommandXboxController(OperatorConstants.kDriverControllerPort);
+   private final CommandXboxController driverXbox = new CommandXboxController(OperatorConstants.XBOX_DRIVER_PORT);
+   private final CommandXboxController operatorXbox = new CommandXboxController(OperatorConstants.XBOX_OPERATOR_PORT);
    private final SwerveSubsystem drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
 
    SwerveInputStream driveAngularVelocity = SwerveInputStream.of(drivebase.getSwerveDrive(),
@@ -59,20 +61,6 @@ public class RobotContainer {
       NamedCommands.registerCommand("test", Commands.print("I EXIST"));
    }
 
-   /**
-    * Use this method to define your trigger->command mappings. Triggers can be
-    * created via the
-    * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with
-    * an arbitrary
-    * predicate, or via the named factories in {@link
-    * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for
-    * {@link
-    * CommandXboxController
-    * Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-    * PS4} controllers or
-    * {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-    * joysticks}.
-    */
    private void configureBindings()
    {
       SmartDashboard.putData("Clear CCd Faults", m_arm.clearCancoderFaultsCmd());
@@ -80,7 +68,9 @@ public class RobotContainer {
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
 
       drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
-   
+      m_arm.setDefaultCommand(m_arm.armStopElevator());
+
+      // DRIVER CONTROLS   
       driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
       driverXbox.b().onTrue(m_arm.setElevPositionCmd(20.0));
       driverXbox.y().onTrue(m_arm.setElevPositionCmd(0.0));
@@ -90,10 +80,21 @@ public class RobotContainer {
       driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
       driverXbox.rightBumper().onTrue(Commands.none());
 
-      driverXbox.leftTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getLeftTriggerAxis()))
-      .onFalse(m_arm.armStopElevator());
-      driverXbox.rightTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getRightTriggerAxis()*-1.0))
-      .onFalse(m_arm.armStopElevator());
+      /*
+       operatorXbox.axisGreaterThan(
+                                    XboxController.Axis.kLeftY.value, 0.1).or(
+                                    operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.1)).whileTrue(
+                                       m_shooter.armByXboxCommand(() -> -operatorXbox.getLeftY()));
+
+       */
+      // OPERATOR CONTROLS
+      operatorXbox.axisGreaterThan(XboxController.Axis.kLeftY.value, 0.1)
+         .or(operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.1))
+         .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()));
+      //driverXbox.leftTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getLeftTriggerAxis()))
+      //.onFalse(m_arm.armStopElevator());
+      //driverXbox.rightTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getRightTriggerAxis()*-1.0))
+      //.onFalse(m_arm.armStopElevator());
 
    
    }

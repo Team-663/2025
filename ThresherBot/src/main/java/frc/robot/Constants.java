@@ -8,18 +8,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import swervelib.math.Matter;
 
-/**
- * The Constants class provides a convenient place for teams to hold robot-wide
- * numerical or boolean
- * constants. This class should not be used for any other purpose. All constants
- * should be declared
- * globally (i.e. public static). Do not put anything functional in this class.
- *
- * <p>
- * It is advised to statically import this class (or one of its inner classes)
- * wherever the
- * constants are needed, to reduce verbosity.
- */
 public final class Constants 
 {
    public static final double ROBOT_MASS = (148 - 20.3) * 0.453592; // 32lbs * kg per pound
@@ -27,15 +15,6 @@ public final class Constants
    public static final double LOOP_TIME = 0.13; // s, 20ms + 110ms sprk max velocity lag
 
    // CAN IDs HERE
-   // SWERVE ONES NOT USED IN THE CODE
-   // NEED TO UPDATE THESE LATER
-   // BackLeftDrive/Angle:   15, 10
-   // BackRightDrive/Angle:  18,  4
-   // FrontLeftDrive/Angle:  16,  7
-   // FrontRightDrive/Angle: 17,  8
-   // Pidgeon: 20
-
-   //CHANGE TO [DONE]:
    // BackLeftDrive/Angle:    4,  5
    // BackRightDrive/Angle:   6,  7
    // FrontLeftDrive/Angle:   8,  9
@@ -43,11 +22,11 @@ public final class Constants
    // Pidgeon: 20
 
    public static final int ELEVATOR_MASTER_CAN_ID = 12;
-   public static final int ELEVATOR_SLAVE_CAN_ID = 13;
-   public static final int ARM_WRIST_CAN_ID = 14;
-   public static final int ARM_ENCODER_CAN_ID = 15;
-   public static final int LASER_CAN_A_ID = 16;
-   public static final int LASER_CAN_B_ID = 17;
+   public static final int ELEVATOR_SLAVE_CAN_ID  = 13;
+   public static final int ARM_WRIST_CAN_ID       = 14;
+   public static final int ARM_ENCODER_CAN_ID     = 15;
+   public static final int LASER_CAN_A_ID         = 16;
+   public static final int LASER_CAN_B_ID         = 17;
 
    public static class DrivebaseConstants
    {
@@ -59,7 +38,8 @@ public final class Constants
 
    public static class OperatorConstants 
    {
-      public static final int kDriverControllerPort = 0;
+      public static final int XBOX_DRIVER_PORT   = 0;
+      public static final int XBOX_OPERATOR_PORT = 1;
 
       public static final double DEADBAND = 0.1;
       public static final double LEFT_Y_DEADBAND = 0.1;
@@ -69,6 +49,8 @@ public final class Constants
 
    public static class ArmConstants
    {
+      public static final int ELEVATOR_LOW_LIMIT_SWITCH_PORT = 0;
+      public static final int ELEVATOR_HIGH_LIMIT_SWITCH_PORT = 1;
       // TODO: TUNE
       public static final double WRIST_PID_P = 2.4;
       public static final double WRIST_PID_I = 0.0;
@@ -80,6 +62,17 @@ public final class Constants
       public static final double ELEVATOR_PID_I = 0.0;
       public static final double ELEVATOR_PID_D = 0.1;
       public static final double ELEVATOR_PID_FF = 0.0;
+
+      public static final double ELEVATOR_POS_DOWN     = 0.0;
+      public static final double ELEVATOR_POS_NEUTRAL  = 15.0;
+      public static final double ELEVATOR_POS_SCORE_L1 = 10.0;
+      public static final double ELEVATOR_POS_SCORE_L2 = 20.0;
+      public static final double ELEVATOR_POS_SCORE_L3 = 30.0;
+
+      public static final double WRIST_POS_DOWN     = 0.0;
+      public static final double WRIST_POS_SCORE_L1 = 30.0;
+      public static final double WRIST_POS_SCORE_L2 = 90.0;
+      public static final double WRIST_POS_SCORE_L3 = 130.0;
 
    }
 }
