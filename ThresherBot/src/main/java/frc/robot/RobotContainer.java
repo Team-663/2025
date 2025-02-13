@@ -7,6 +7,7 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
+import frc.robot.commands.drivebase.CenterOnAprilTag;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import frc.robot.subsystems.Arm;
@@ -64,6 +65,8 @@ public class RobotContainer {
    private void configureBindings()
    {
       SmartDashboard.putData("Clear CCd Faults", m_arm.clearCancoderFaultsCmd());
+
+      SmartDashboard.putData("Align with Tag Cmd", new CenterOnAprilTag(drivebase));
       Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
 
