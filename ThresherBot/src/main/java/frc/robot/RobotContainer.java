@@ -63,10 +63,10 @@ public class RobotContainer {
    }
 
    private void configureBindings()
-   {
+   {  CenterOnAprilTag centerCommand =  new CenterOnAprilTag(drivebase);
       SmartDashboard.putData("Clear CCd Faults", m_arm.clearCancoderFaultsCmd());
 
-      SmartDashboard.putData("Align with Tag Cmd", new CenterOnAprilTag(drivebase));
+      SmartDashboard.putData("Align with Tag Cmd", centerCommand);
       Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
 
@@ -76,7 +76,8 @@ public class RobotContainer {
       // DRIVER CONTROLS   
       driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
       driverXbox.b().onTrue(m_arm.setElevPositionCmd(20.0));
-      driverXbox.y().onTrue(m_arm.setElevPositionCmd(0.0));
+     // driverXbox.y().onTrue(m_arm.setElevPositionCmd(0.0));
+      driverXbox.y().onTrue(centerCommand);
 
       driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());
