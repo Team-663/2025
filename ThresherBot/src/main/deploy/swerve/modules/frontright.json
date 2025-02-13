@@ -6,12 +6,12 @@
   "absoluteEncoderOffset": 316.82,
   "drive": {
     "type": "talonfx",
-    "id": 17,
+    "id": 10,
     "canbus": null
   },
   "angle": {
     "type": "sparkmax",
-    "id": 8,
+    "id": 11,
     "canbus": null
   },
   "encoder": {
