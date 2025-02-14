@@ -36,13 +36,16 @@ import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.measure.*;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.shuffleboard.ComplexWidget;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import frc.robot.Constants;
 import frc.robot.Constants.ArmConstants;
 
@@ -64,6 +67,7 @@ public class Arm extends SubsystemBase
    //private final LaserCan m_laser = new LaserCan(Constants.LASER_CAN_A_ID);
 
    private ShuffleboardTab tab = Shuffleboard.getTab("Arm");
+   private ComplexWidget dbArmSubsystemEntry = tab.add(this);
    private GenericEntry dbLaserEntry = tab.add("Laser Distance", 0).getEntry();
    private GenericEntry dbWristAngle = tab.add("Wrist Angle", 0).getEntry();
    private GenericEntry dbWristSetpoint = tab.add("Wrist Set", 0).getEntry();
@@ -93,14 +97,17 @@ public class Arm extends SubsystemBase
    private int printCount = 0;
 
    private double m_wristSetpoint = 0.0;
+   private double m_wristError = 0.0;
    private double m_elevatorSetpoint = 0.0;
+   private double m_elevatorError = 0.0;
+   private boolean m_elevatorMovementBlocked = false;
+   private boolean m_wristMovementBlocked = false;
    private boolean m_elevatorUsePid = false;
 
    public Arm()
    {
       ConfigureWrist();
       ConfigureElevator();
-
    }
    // GUIDES: https://v6.docs.ctr-electronics.com/en/stable/docs/migration/migration-guide/closed-loop-guide.html
    // https://github.com/CrossTheRoadElec/Phoenix6-Examples/blob/main/java/PositionClosedLoop/src/main/java/frc/robot/Robot.java
@@ -111,19 +118,58 @@ public class Arm extends SubsystemBase
       // This method will be called once per scheduler run
       //ExecuteWristPIDPeriodic();
    
+      // TODO: we don't need this
       UpdateSmartDashboard();
 
    }
 
+   public boolean isWristAtPosition(double position)
+   {
+      double currentPos = m_wrist.getPosition().getValueAsDouble();
+      m_wristError = Math.abs(position - currentPos);
+      return (m_wristError < ArmConstants.WRIST_ERROR_TOLERANCE);
+   }
+
+   public void setWristPosition(double position)
+   {
+      // Safety check: do not move wrist up unless elevator is up first
+      if (position > ArmConstants.WRIST_POS_ELV_SAFE && m_elevatorEncoder.getPosition() < ArmConstants.ELEVATOR_POS_NEUTRAL)
+      {
+         m_wristMovementBlocked = true;
+      }
+      else
+      {
+         m_wristMovementBlocked = false;
+         m_wristSetpoint = position;
+         m_wrist.setControl(m_wristVoltage.withPosition(m_wristSetpoint));
+      }
+  
+   }
+
+   public boolean isElevatorAtPosition(double position)
+   {
+      double currentPos = m_elevatorEncoder.getPosition();
+      m_elevatorError = Math.abs(position - currentPos);
+      return m_elevatorError < ArmConstants.ELEVATOR_ERROR_TOLERANCE;
+   }
+
    public void setElevatorPosition(double position)
    {
-      System.out.println("Set Elevator Position: " + position);
-      double currentPos = m_elevatorEncoder.getPosition();
-      m_elevatorSetpoint = position;
-      // TODO: some kind of offsets here possible?
+      // SAFETY CHECK: DO NOT move elevator down UNLESS wrist is down first
+      if (position < ArmConstants.ELEVATOR_POS_NEUTRAL && m_wrist.getPosition().getValueAsDouble() > ArmConstants.WRIST_POS_ELV_SAFE)
+      {
+         m_elevatorMovementBlocked = true;
+      }
+      else
+      {
+         m_elevatorMovementBlocked = false;
+         m_elevatorSetpoint = position;
+         //m_elevatorError = Math.abs(m_elevatorSetpoint - currentPos);
+         // TODO: some kind of offsets here possible?
 
-      // TODO: if you need to apply arbFF do it here, not for elevator i think
-      m_elevatorPID.setReference(m_elevatorSetpoint, ControlType.kPosition);
+         // TODO: if you need to apply arbFF do it here, not for elevator i think
+         m_elevatorPID.setReference(m_elevatorSetpoint, ControlType.kPosition);
+      }
    }
 
    private boolean allowElevatorMotion(double speed)
@@ -155,6 +201,40 @@ public class Arm extends SubsystemBase
    {
       m_wrist.setControl(m_dutyCycleControl.withOutput(speed)
                                            .withLimitReverseMotion(m_wristLimitLow.get()));
+   }
+
+   public Command moveElevatorToNeutralCmd()
+   {
+      return Commands.sequence(
+         new FunctionalCommand(()-> setElevatorPosition(ArmConstants.ELEVATOR_POS_NEUTRAL)
+                                 , null
+                                 , null
+                                 , ()-> isElevatorAtPosition(ArmConstants.ELEVATOR_POS_NEUTRAL)
+                                 , this
+                                 )
+         
+      );
+   }
+
+   public Command moveWristToNeutralCmd()
+   {
+      return Commands.sequence(
+         new FunctionalCommand(()-> setWristPosition(ArmConstants.WRIST_POS_DOWN)
+                                 , null
+                                 , null
+                                 , ()-> isWristAtPosition(ArmConstants.WRIST_POS_DOWN)
+                                 , this
+                                 )
+         
+      );
+   }
+
+   public Command moveArmToNeutralCmd()
+   {
+      return Commands.sequence(
+         moveElevatorToNeutralCmd(),
+         moveWristToNeutralCmd()
+      ).withName("ArmToNeutral");
    }
 
    
@@ -236,7 +316,8 @@ public class Arm extends SubsystemBase
          System.out.println("Wrist configuration failed: " + status);
       }
 
-      m_wrist.setPosition(0);
+      // TODO: fix this after testing
+      m_wrist.setPosition(ArmConstants.WRIST_POS_DOWN);
    }
 
    public void ExecuteWristPIDPeriodic()
@@ -301,6 +382,8 @@ public class Arm extends SubsystemBase
 
    private void UpdateSmartDashboard()
    {
+      // I don't think we need this, the subsystem is sent to the tab now
+      /*
       dbLaserEntry.setDouble(0);
       dbWristAngle.setDouble(m_wristEncoder.getPosition().getValueAsDouble());
       dbWristSetpoint.setDouble(m_wristSetpoint);
@@ -311,7 +394,7 @@ public class Arm extends SubsystemBase
       dbElvEncRaw.setDouble(m_elevatorEncoder.getPosition());
       dbElvEncVel.setDouble(m_elevatorEncoder.getVelocity());
       dbElvSetpoint.setDouble(m_elevatorSetpoint);
-
+      */
       //sbtShooterSetpoint.setDouble(m_shooterSetpoint);
       //sbtArmSpeed.setDouble((m_armMotor.get()));
       //sbtArmPosition.setDouble(m_armMotor.getSelectedSensorPosition());

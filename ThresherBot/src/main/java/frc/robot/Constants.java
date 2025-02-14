@@ -58,6 +58,7 @@ public final class Constants
       public static final double WRIST_PID_D = 0.1;
       public static final double WRIST_PID_FF = 0.0;
 
+      public static final double WRIST_ERROR_TOLERANCE = 0.5; // degrees
       public static final double WRIST_MAX_OUTPUT_UP = 0.3;
       public static final double WRIST_MAX_OUTPUT_DOWN = -0.3;
 
@@ -66,6 +67,7 @@ public final class Constants
       public static final double ELEVATOR_PID_D = 0.1;
       public static final double ELEVATOR_PID_FF = 0.0;
 
+      public static final double ELEVATOR_ERROR_TOLERANCE = 0.5; // inches
       public static final double ELEVATOR_MAX_OUTPUT_UP = 0.75;
       public static final double ELEVATOR_MAX_OUTPUT_DOWN = -0.5;
 
@@ -76,6 +78,7 @@ public final class Constants
       public static final double ELEVATOR_POS_SCORE_L3 = 30.0;
 
       public static final double WRIST_POS_DOWN     = 0.0;
+      public static final double WRIST_POS_ELV_SAFE = 5.0; // Minimum arm angle before elevator can move down
       public static final double WRIST_POS_SCORE_L1 = 30.0;
       public static final double WRIST_POS_SCORE_L2 = 90.0;
       public static final double WRIST_POS_SCORE_L3 = 130.0;
