@@ -1,95 +1,84 @@
 package frc.robot.commands.drivebase;
 
-
-import swervelib.SwerveDrive;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.controller.PIDController;
-//import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.LimelightHelpers;
+import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
+import swervelib.SwerveDrive;
 
 public class CenterOnAprilTag extends Command {
-
   private final SwerveSubsystem swerveSubsystem;
   private final SwerveDrive swerveDrive;
 
-  //Set these
-  private final PIDController xController = new PIDController(0.5, 0, 0);
-  private final PIDController yController = new PIDController(0.5, 0, 0);
-  private final PIDController rotationController = new PIDController(0.4, 0, 0.01);
+
+  // PID controllers for X, Y, and heading
+  private final PIDController xController = new PIDController(kP, 0, 0);
+  private final PIDController yController = new PIDController(kP, 0, 0);
+  private final PIDController headingController = new PIDController(kP, 0, 0);
+
+  // Tolerance for each axis
+  private static final double kTolerance = 0.1; // Example tolerance, adjust as needed
+
+  // Gains for the PID controllers (tune these!)
+  private static final double kP = 0.1; // Proportional gain
 
   public CenterOnAprilTag(SwerveSubsystem swerveSubsystem) {
     this.swerveSubsystem = swerveSubsystem;
-    this.swerveDrive = swerveSubsystem.getSwerveDrive(); // Get the SwerveDrive object from your subsystem
+    this.swerveDrive = swerveSubsystem.getSwerveDrive();
     addRequirements(swerveSubsystem);
 
-    // Set tolerances
-    xController.setTolerance(0.05);
-    yController.setTolerance(0.05);
-    rotationController.setTolerance(0.05);
+    // Set tolerances for the PID controllers
+    xController.setTolerance(kTolerance);
+    yController.setTolerance(kTolerance);
+    headingController.setTolerance(kTolerance);
   }
 
   @Override
   public void initialize() {
-    // Reset the controllers
-    xController.reset();
-    yController.reset();
-    rotationController.reset();
+    //
   }
 
   @Override
   public void execute() {
-    // Get the pose of the AprilTag relative to the camera using LimelightHelpers
-    //LimelightHelpers.PoseEstimate limelightEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-ps"); // Replace "limelight" with your Limelight's name
-    Pose3d targetPose = LimelightHelpers.getTargetPose3d_CameraSpace("limelight-ps");
-    double tagCount = LimelightHelpers.getTargetCount("limelight-ps");
-    SmartDashboard.putNumber("LLPoseTagCount", tagCount);
-    if (tagCount >= 1) {
-      //Pose2d tagPose = limelightEstimate.pose;
+   
+    String limelightName = "limelight-ps";
+    boolean isOpenLoop = false;
 
-      // Calculate the error in x, y, and rotation
-      double xError = targetPose.getX();
-      double yError = targetPose.getY();
-      double rotationError = targetPose.getRotation().getAngle();
-      // Calculate the PID outputs
-      double xOutput = xController.calculate(xError);
-      double yOutput = yController.calculate(yError);
-      double rotationOutput = rotationController.calculate(rotationError);
+   // if (LimelightHelpers.getTV(limelightName)) {
+      // Get the offsets from the limelight
+      double horizontalOffset = LimelightHelpers.getTX(limelightName);
+      double verticalOffset = LimelightHelpers.getTY(limelightName);
+      Pose2d targetPose = LimelightHelpers.getBotPose2d(limelightName);
+      double rotationError = targetPose.getRotation().getDegrees();
+      //double headingError = swerveSubsystem.getHeading() 
 
-      // Calculate module states using YAGSL kinematics
-      SwerveModuleState[] moduleStates = 
-          swerveDrive.kinematics.toSwerveModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(
-              xOutput, 
-              yOutput, 
-              rotationOutput, 
-              swerveSubsystem.getHeading())); 
+      // Calculate the chassis speeds using the PID controllers
+      double xSpeed = xController.calculate(horizontalOffset);
+      double ySpeed = yController.calculate(verticalOffset);
+      double omega = headingController.calculate(rotationError);
 
-      // Set the module states
-      swerveDrive.setModuleStates(moduleStates, false); //assuming false
+      // Create a ChassisSpeeds object with the calculated speeds
+      ChassisSpeeds chassisSpeeds = new ChassisSpeeds(xSpeed, ySpeed, omega);
 
-      // Display PID values on SmartDashboard for tuning
-      SmartDashboard.putNumber("X Error", xError);
-      SmartDashboard.putNumber("Y Error", yError);
-      SmartDashboard.putNumber("Rotation Error", rotationError);
-      SmartDashboard.putNumber("X Output", xOutput);
-      SmartDashboard.putNumber("Y Output", yOutput);
-      SmartDashboard.putNumber("Rotation Output", rotationOutput);
-    }
+      // Set the module states based on the chassis speeds
+      swerveDrive.setModuleStates(swerveDrive.kinematics.toSwerveModuleStates(chassisSpeeds), isOpenLoop);
+ //  } else {
+      // Stop the robot if no target is detected
+    //  swerveDrive.setModuleStates(swerveDrive.kinematics.toSwerveModuleStates(new ChassisSpeeds(0, 0, 0)), isOpenLoop);
+   // }
   }
 
   @Override
   public boolean isFinished() {
-    // Finish when the robot is centered on the AprilTag
-    return xController.atSetpoint() && yController.atSetpoint() && rotationController.atSetpoint();
+    // Check if the robot is within tolerance on all axes
+    return xController.atSetpoint() && yController.atSetpoint() && headingController.atSetpoint();
   }
 
   @Override
   public void end(boolean interrupted) {
-    // Stop the robot by setting all module states to zero
-    swerveDrive.setModuleStates(swerveDrive.kinematics.toSwerveModuleStates(new ChassisSpeeds(0, 0, 0)), false); //assuming false
+    swerveDrive.setModuleStates(swerveDrive.kinematics.toSwerveModuleStates(new ChassisSpeeds(0,0,0)),false);
   }
 }
+
