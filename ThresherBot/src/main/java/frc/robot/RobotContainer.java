@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
@@ -69,14 +70,14 @@ public class RobotContainer {
       SmartDashboard.putData("Align with Tag Cmd", new CenterOnAprilTag(drivebase));
       Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
-
+      Command elevNeutralCmd = m_arm.setElevPositionCmd(ArmConstants.ELEVATOR_POS_NEUTRAL);
+      
       drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
-      m_arm.setDefaultCommand(m_arm.armStopElevator());
+      m_arm.setDefaultCommand(m_arm.armStopCmd());
 
       // DRIVER CONTROLS   
       driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.b().onTrue(m_arm.setElevPositionCmd(20.0));
-      driverXbox.y().onTrue(m_arm.setElevPositionCmd(0.0));
+      
 
       driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());
@@ -93,11 +94,14 @@ public class RobotContainer {
       // OPERATOR CONTROLS
       operatorXbox.axisGreaterThan(XboxController.Axis.kLeftY.value, 0.1)
          .or(operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.1))
-         .whileTrue(m_arm.elevatorByXbox(()->operatorXbox.getLeftY()));
+         .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()*-1, ()->operatorXbox.getRightY()*-1.0));
 
       operatorXbox.axisGreaterThan(XboxController.Axis.kRightY.value, 0.1)
       .or(operatorXbox.axisLessThan(XboxController.Axis.kRightY.value, -0.1))
-         .whileTrue(m_arm.wristByXboxCmd(()->operatorXbox.getRightY()));
+         .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()*-1, ()->operatorXbox.getRightY()*-1.0));
+
+      operatorXbox.b().onTrue(m_arm.setElevPositionCmd(10.0));
+      operatorXbox.a().onTrue(m_arm.setElevPositionCmd(1.0));
       //driverXbox.leftTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getLeftTriggerAxis()))
       //.onFalse(m_arm.armStopElevator());
       //driverXbox.rightTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getRightTriggerAxis()*-1.0))
