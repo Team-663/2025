@@ -54,19 +54,19 @@ public final class Constants
       public static final int ELEVATOR_HIGH_LIMIT_SWITCH_PORT = 1;
       public static final int WRIST_LOW_LIMIT_SWITCH_PORT = 2;
       // TODO: TUNE
-      public static final double WRIST_PID_P = 2.4;
+      public static final double WRIST_PID_P = 0.75;
       public static final double WRIST_PID_I = 0.0;
       public static final double WRIST_PID_D = 0.1;
       public static final double WRIST_PID_FF = 0.0;
 
       public static final double WRIST_ERROR_TOLERANCE = 2.5; // degrees
-      public static final double WRIST_MAX_OUTPUT_UP = 0.4;
-      public static final double WRIST_MAX_OUTPUT_DOWN = -0.3;
-      public static final double WRIST_MAX_OUTPUT_DOWN_VERY_SLOW = -0.1;
+      public static final double WRIST_MAX_OUTPUT_UP = 0.6;
+      public static final double WRIST_MAX_OUTPUT_DOWN = -0.4;
+      public static final double WRIST_MAX_OUTPUT_DOWN_VERY_SLOW = -0.2;
 
-      public static final double ELEVATOR_PID_P = 0.3;
+      public static final double ELEVATOR_PID_P = 0.45;
       public static final double ELEVATOR_PID_I = 0.0;
-      public static final double ELEVATOR_PID_D = 0.01;
+      public static final double ELEVATOR_PID_D = 0.1;
       public static final double ELEVATOR_PID_FF = 0.0;
 
       public static final double ELEVATOR_ERROR_TOLERANCE = 0.5; // inches
@@ -75,14 +75,15 @@ public final class Constants
       public static final double ELEVATOR_ENC_CONV_FACTOR = ((8.2686718/ELEVATOR_TRANSMISSION_RATIO));
 
       public static final double ELEVATOR_POS_DOWN     = 0.35;
-      public static final double ELEVATOR_POS_MAX_HEIGHT = 26.35;
+      public static final double ELEVATOR_POS_MAX_HEIGHT = 26.0;
       public static final double ELEVATOR_POS_NEUTRAL  = 6.0;
       public static final double ELEVATOR_POS_SCORE_L2 = 10.0;
       public static final double ELEVATOR_POS_SCORE_L3 = 20.0;
       public static final double ELEVATOR_POS_SCORE_L4 = ELEVATOR_POS_MAX_HEIGHT;
 
       public static final double WRIST_POS_DOWN     = 0.0;
-      public static final double WRIST_POS_ELV_SAFE = 5.0; // Minimum arm angle before elevator can move down
+      public static final double WRIST_POS_MAX_ANGLE = 215.0;
+      public static final double WRIST_POS_ELV_SAFE = 15.0; // Minimum arm angle before elevator can move down
       public static final double WRIST_POS_SCORE_PREP_L2 = 20.0;
       public static final double WRIST_POS_SCORE_END_L2 = 70.0;
       public static final double WRIST_POS_SCORE_L3 = 90.0;

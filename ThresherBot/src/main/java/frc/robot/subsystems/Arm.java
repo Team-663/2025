@@ -13,6 +13,7 @@ import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
@@ -145,6 +146,12 @@ public class Arm extends SubsystemBase
       //pidConfig.apply()
    }
 
+   public void setWristHere()
+   {
+      m_wristSetpoint = m_wrist.getPosition().getValueAsDouble();
+      setWristPosition(m_wristSetpoint);
+   }
+
    public boolean isWristAtPosition(double position)
    {
       double currentPos = m_wrist.getPosition().getValueAsDouble();
@@ -155,17 +162,24 @@ public class Arm extends SubsystemBase
    public void setWristPosition(double position)
    {
       // Safety check: do not move wrist up unless elevator is up first
-      if (position > ArmConstants.WRIST_POS_ELV_SAFE && m_elevatorEncoder.getPosition() < ArmConstants.ELEVATOR_POS_NEUTRAL)
-      {
-         m_wristMovementBlocked = true;
-      }
-      else
+      //if (position > ArmConstants.WRIST_POS_ELV_SAFE && m_elevatorEncoder.getPosition() < ArmConstants.ELEVATOR_POS_NEUTRAL)
+      //{
+      //   m_wristMovementBlocked = true;
+      //}
+      //else
       {
          m_wristMovementBlocked = false;
          m_wristSetpoint = position;
          m_wrist.setControl(m_wristVoltage.withPosition(m_wristSetpoint));
       }
   
+   }
+
+   public void setElevatorHere()
+   {
+      m_elevatorSetpoint = m_elevatorEncoder.getPosition();
+      m_elevatorUsePid = true;
+      setElevatorPosition(m_elevatorSetpoint);
    }
 
    public boolean isElevatorAtPosition(double position)
@@ -188,15 +202,14 @@ public class Arm extends SubsystemBase
       //      m_elevatorMovementBlocked = false;
       //}
       //else
-      {
-         m_elevatorMovementBlocked = false;
-         m_elevatorSetpoint = position;
-         //m_elevatorError = Math.abs(m_elevatorSetpoint - currentPos);
-         // TODO: some kind of offsets here possible?
+      m_elevatorMovementBlocked = false;
+      m_elevatorSetpoint = position;
+      //m_elevatorError = Math.abs(m_elevatorSetpoint - currentPos);
+      // TODO: some kind of offsets here possible?
 
-         // TODO: if you need to apply arbFF do it here, not for elevator i think
-         m_elevatorPID.setReference(m_elevatorSetpoint, ControlType.kPosition);
-      }
+      // TODO: if you need to apply arbFF do it here, not for elevator i think
+      m_elevatorPID.setReference(m_elevatorSetpoint, ControlType.kPosition);
+      
    }
 
    private boolean allowElevatorMotion(double speed)
@@ -215,7 +228,21 @@ public class Arm extends SubsystemBase
       return true;
    }
 
-   private void moveElevatorOpenLoop(double speed)
+   public void setArmSafe()
+   {
+      m_elevatorUsePid = false;
+      m_wristMovementBlocked = true;
+      moveElevatorOpenLoop(0);
+      moveWristOpenLoop(0);
+   }
+
+   public void resetAllArmEncoders()
+   {
+      m_elevatorEncoder.setPosition(0);
+      m_wrist.setPosition(0.0);
+   }
+
+   public void moveElevatorOpenLoop(double speed)
    {
       double output = linearDeadband(speed, 0.1);
       output = MathUtil.clamp(output, ArmConstants.ELEVATOR_MAX_OUTPUT_DOWN, ArmConstants.ELEVATOR_MAX_OUTPUT_UP);
@@ -231,7 +258,7 @@ public class Arm extends SubsystemBase
       SmartDashboard.putNumber("ELV: openLoopOut", output);
    }
 
-   private void moveWristOpenLoop(double speed)
+   public void moveWristOpenLoop(double speed)
    {
       double output = linearDeadband(speed, 0.1);
       double wristPos = m_wrist.getPosition().getValueAsDouble();
@@ -395,11 +422,12 @@ public class Arm extends SubsystemBase
       masterConfig.closedLoop.pidf(  ArmConstants.ELEVATOR_PID_P,
                                      ArmConstants.ELEVATOR_PID_I,
                                      ArmConstants.ELEVATOR_PID_D,
-                                     ArmConstants.ELEVATOR_PID_FF);
+                                     ArmConstants.ELEVATOR_PID_FF)
+                              .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+                              .positionWrappingEnabled(false)
+                              .outputRange(ArmConstants.ELEVATOR_MAX_OUTPUT_DOWN, ArmConstants.ELEVATOR_MAX_OUTPUT_UP);
                               //.feedbackSensor(FeedbackSensor.kAlternateOrExternalEncoder);
       masterConfig.encoder.positionConversionFactor(ArmConstants.ELEVATOR_ENC_CONV_FACTOR);
-      masterConfig.closedLoop.outputRange(0.25, 
-                                          ArmConstants.ELEVATOR_MAX_OUTPUT_DOWN);
       masterConfig.openLoopRampRate(0.5);
       masterConfig.softLimit.forwardSoftLimit(ArmConstants.ELEVATOR_POS_MAX_HEIGHT);
       masterConfig.softLimit.forwardSoftLimitEnabled(true);
@@ -427,6 +455,7 @@ public class Arm extends SubsystemBase
       MotorOutputConfigs mconfig = new MotorOutputConfigs();
 
       mconfig.withInverted(InvertedValue.Clockwise_Positive);
+      mconfig.withNeutralMode(NeutralModeValue.Brake);
 
       TalonFXConfiguration fx_cfg = new TalonFXConfiguration();
       //fx_cfg.Feedback.FeedbackRemoteSensorID = m_wristEncoder.getDeviceID();
@@ -438,7 +467,7 @@ public class Arm extends SubsystemBase
       fx_cfg.Slot0.kI = ArmConstants.WRIST_PID_I;
       fx_cfg.Slot0.kD = ArmConstants.WRIST_PID_D;
 
-      fx_cfg.SoftwareLimitSwitch.withForwardSoftLimitThreshold(200.0)
+      fx_cfg.SoftwareLimitSwitch.withForwardSoftLimitThreshold(ArmConstants.WRIST_POS_MAX_ANGLE)
                                  .withReverseSoftLimitThreshold(0.0)
                                  .withForwardSoftLimitEnable(true)
                                  .withReverseSoftLimitEnable(false);
@@ -541,12 +570,7 @@ public class Arm extends SubsystemBase
       dbElvEncRaw.setDouble(m_elevatorEncoder.getPosition());
       dbElvEncVel.setDouble(m_elevatorEncoder.getVelocity());
       dbElvSetpoint.setDouble(m_elevatorSetpoint);
-      
-      //sbtShooterSetpoint.setDouble(m_shooterSetpoint);
-      //sbtArmSpeed.setDouble((m_armMotor.get()));
-      //sbtArmPosition.setDouble(m_armMotor.getSelectedSensorPosition());
-      //stbArmSetpoint.setDouble(m_armSetpoint);
-      //stbArmError.setDouble(m_armMotor.getClosedLoopError());
+   
    }
 
    private static double linearDeadband(double raw, double deadband)

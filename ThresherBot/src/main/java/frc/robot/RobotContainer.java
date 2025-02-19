@@ -29,6 +29,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.commands.arm.ArmToPosCmd;
+import frc.robot.commands.arm.ElevatorToPosCmd;
+import frc.robot.commands.arm.WristToPosCmd;
 import swervelib.SwerveInputStream;
 
 public class RobotContainer {
@@ -100,8 +103,13 @@ public class RobotContainer {
       .or(operatorXbox.axisLessThan(XboxController.Axis.kRightY.value, -0.1))
          .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()*-1, ()->operatorXbox.getRightY()*-1.0));
 
-      operatorXbox.b().onTrue(m_arm.setElevPositionCmd(10.0));
-      operatorXbox.a().onTrue(m_arm.setElevPositionCmd(1.0));
+      operatorXbox.y().onTrue(new ElevatorToPosCmd(m_arm, ArmConstants.ELEVATOR_POS_NEUTRAL));
+      operatorXbox.x().onTrue(new ElevatorToPosCmd(m_arm, ArmConstants.ELEVATOR_POS_SCORE_L3));
+
+      operatorXbox.b().onTrue(new WristToPosCmd(m_arm, ArmConstants.WRIST_POS_SCORE_L3));
+      operatorXbox.a().onTrue(new WristToPosCmd(m_arm, ArmConstants.WRIST_POS_ELV_SAFE));
+      operatorXbox.start().onTrue(Commands.runOnce(m_arm::resetAllArmEncoders));
+
       //driverXbox.leftTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getLeftTriggerAxis()))
       //.onFalse(m_arm.armStopElevator());
       //driverXbox.rightTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getRightTriggerAxis()*-1.0))
@@ -122,5 +130,12 @@ public class RobotContainer {
 
    public void setMotorBrake(boolean brake) {
       drivebase.setMotorBrake(brake);
+   }
+
+   public void setArmHereSafe()
+   {
+      //m_arm.setElevatorHere();
+      //m_arm.setWristHere();
+      m_arm.setArmSafe();
    }
 }
