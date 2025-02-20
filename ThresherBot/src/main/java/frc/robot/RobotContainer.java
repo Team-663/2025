@@ -77,7 +77,8 @@ public class RobotContainer {
       driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
       driverXbox.b().onTrue(m_arm.setElevPositionCmd(20.0));
      // driverXbox.y().onTrue(m_arm.setElevPositionCmd(0.0));
-      driverXbox.y().onTrue(centerCommand);
+      driverXbox.y().whileTrue(centerCommand);
+      driverXbox.x().onTrue(Commands.runOnce(drivebase::stopSwerveDrive));
 
       driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());

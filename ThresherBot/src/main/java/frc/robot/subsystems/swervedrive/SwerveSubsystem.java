@@ -226,6 +226,11 @@ public class SwerveSubsystem extends SubsystemBase {
       swerveDrive.zeroGyro();
    }
 
+   public void stopSwerveDrive()
+   {
+      swerveDrive.setModuleStates(swerveDrive.kinematics.toSwerveModuleStates(new ChassisSpeeds(0, 0, 0)), false);
+   }
+
    /**
     * Checks if the alliance is red, defaults to false if alliance isn't available.
     *
