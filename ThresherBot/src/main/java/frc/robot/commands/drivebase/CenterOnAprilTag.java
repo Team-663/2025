@@ -74,7 +74,6 @@ public class CenterOnAprilTag extends Command {
         double kD_range = SmartDashboard.getNumber("Range kD", kD_RANGE);
         double rangeDeadband = SmartDashboard.getNumber("Range Deadband", RANGE_DEADBAND);
         boolean useTY = SmartDashboard.getBoolean("Use TY for Range", USE_TY_FOR_RANGE);
-        double targetArea = SmartDashboard.getNumber("Target Area", TARGET_AREA); //For ta
         double desiredArea = SmartDashboard.getNumber("Desired Area", DESIRED_AREA); //For ta
 
         // Update PID controllers
@@ -90,14 +89,12 @@ public class CenterOnAprilTag extends Command {
             double rot = m_aimPID.calculate(tx);
             rot = MathUtil.clamp(rot, -1.0, 1.0) * m_swerveDrive.getMaximumChassisAngularVelocity(); //Max Angular Speed
 
-
             // Ranging Logic
             double error;
             if (useTY) {
                 error = LimelightHelpers.getTY(limelightName);
             } else {
                 error = LimelightHelpers.getTA(limelightName) - desiredArea; // Use desiredArea
-                targetArea = desiredArea;
             }
             if (Math.abs(error) < rangeDeadband) {
                 error = 0;
