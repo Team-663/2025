@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Map;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
@@ -47,13 +48,18 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
+import edu.wpi.first.wpilibj2.command.SelectCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import frc.robot.commands.arm.ArmToPosCmd;
 import frc.robot.commands.arm.ElevatorToPosCmd;
+import frc.robot.commands.arm.WristHomeLimit;
 import frc.robot.commands.arm.WristToPosCmd;
 import frc.robot.Constants;
 import frc.robot.Constants.ArmConstants;
@@ -66,7 +72,6 @@ public class Arm extends SubsystemBase
    private final SparkClosedLoopController m_elevatorPID = m_elevatorMaster.getClosedLoopController();
    private RelativeEncoder m_elevatorEncoder;
 
-   private final DigitalInput m_elevatorLimitHigh = new DigitalInput(ArmConstants.ELEVATOR_HIGH_LIMIT_SWITCH_PORT);
    private final DigitalInput m_elevatorLimitLow = new DigitalInput(ArmConstants.ELEVATOR_LOW_LIMIT_SWITCH_PORT);
    // WRIST
    private final TalonFX m_wrist = new TalonFX(Constants.ARM_WRIST_CAN_ID);
@@ -88,7 +93,7 @@ public class Arm extends SubsystemBase
    private GenericEntry dbElvEncRaw = tab.add("Elv Enc Raw", 0).getEntry();
    private GenericEntry dbElvEncVel = tab.add("Elv Enc Vel", 0).getEntry();
    private GenericEntry dbElvSetpoint = tab.add("Elv Setpoint", 0).getEntry();
-
+   private GenericEntry dbArmScoreLevel = tab.add("Arm Level", 0).getEntry();
 
 
    private final StatusSignal<Boolean> f_fusedSensorOutOfSync = m_wrist.getFault_FusedSensorOutOfSync(false);
@@ -113,7 +118,14 @@ public class Arm extends SubsystemBase
    private boolean m_elevatorWristInterlockEnabled = true;
    private boolean m_elevatorMovementBlocked = false;
    private boolean m_wristMovementBlocked = false;
+   private boolean m_wristLimitLowState = false;
    private boolean m_elevatorUsePid = false;
+   private int m_armScoreLevel = 0;
+
+   private enum CoralLevel {
+      NONE,L1,L2,L3,L4
+
+    }
 
    public Arm()
    {
@@ -150,6 +162,20 @@ public class Arm extends SubsystemBase
    {
       m_wristSetpoint = m_wrist.getPosition().getValueAsDouble();
       setWristPosition(m_wristSetpoint);
+   }
+   public double getWristPosition()
+   {
+      return m_wrist.getPosition().getValueAsDouble();
+   }
+
+   public boolean isSafeToMoveWristDown()
+   {
+      return (m_elevatorEncoder.getPosition() > ArmConstants.ELEVATOR_POS_NEUTRAL);
+   }
+
+   public boolean isWristAtLowLimit()
+   {
+      return !m_wristLimitLow.get();
    }
 
    public boolean isWristAtPosition(double position)
@@ -208,6 +234,7 @@ public class Arm extends SubsystemBase
       // TODO: some kind of offsets here possible?
 
       // TODO: if you need to apply arbFF do it here, not for elevator i think
+      
       m_elevatorPID.setReference(m_elevatorSetpoint, ControlType.kPosition);
       
    }
@@ -242,6 +269,11 @@ public class Arm extends SubsystemBase
       m_wrist.setPosition(0.0);
    }
 
+   public void resetWristEncoder()
+   {
+      m_wrist.setPosition(0.0);
+   }
+
    public void moveElevatorOpenLoop(double speed)
    {
       double output = linearDeadband(speed, 0.1);
@@ -268,18 +300,62 @@ public class Arm extends SubsystemBase
 
       output = MathUtil.clamp(output, wristDownMaxSpeed, ArmConstants.WRIST_MAX_OUTPUT_UP);
 
+      if (isWristAtLowLimit() && output < 0.0)
+         output = 0.0;
 
       m_wrist.setControl(m_dutyCycleControl.withOutput(output));
                                            //.withLimitReverseMotion(m_wristLimitLow.get()));
    }
 
+   public Command armSetScoreLevelCmd(int level)
+   {
+      return Commands.runOnce(()->{m_armScoreLevel = level;})
+                     .withName("SetScoreLevel");
+   }
+
+   
+   private int getScoreLevel()
+   {
+      return m_armScoreLevel;
+   }
+
+   public Command armScoreCoralCmd()
+   {
+      return new SelectCommand<>(
+            // Maps selector values to commands
+            Map.ofEntries(
+               Map.entry(2, scoreOnL2EndCmd()),
+               Map.entry(3, scoreOnL3EndCmd()),
+               Map.entry(4, scoreOnL4EndCmd())),
+            this::getScoreLevel);
+   }
+   /*
+   public Command armScoreCmd()
+      {
+         int level = m_armScoreLevel;
+         SmartDashboard.putString("Score Level", "-");
+         switch(level)
+         {
+            case 2:
+               SmartDashboard.putString("Score Level", "L2");
+               return scoreOnL2EndCmd();
+            case 3:
+               SmartDashboard.putString("Score Level", "L3");
+               return scoreOnL3EndCmd();
+            case 4:
+            SmartDashboard.putString("Score Level", "L4");
+               return scoreOnL4EndCmd();
+            default:
+               return Commands.none();
+
+         }
+      }
+         */
+
    public Command moveElevatorToNeutralCmd()
    {
       return Commands.sequence(
-         new FunctionalCommand(()->{
-                                       //updateElevatorPIDSettings();
-                                       //setElevatorPosition(ArmConstants.ELEVATOR_POS_NEUTRAL);
-                                    }
+         new FunctionalCommand(()->{m_armScoreLevel = 0;}
                                  ,()->setElevatorPosition(ArmConstants.ELEVATOR_POS_NEUTRAL)
                                  , null
                                  , ()-> isElevatorAtPosition(ArmConstants.ELEVATOR_POS_NEUTRAL)
@@ -305,39 +381,58 @@ public class Arm extends SubsystemBase
    public Command moveArmToNeutralCmd()
    {
       return Commands.sequence(
-         moveElevatorToNeutralCmd(),
-         moveWristToNeutralCmd()
+          new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
+         ,new WristToPosCmd(this, ArmConstants.WRIST_POS_DOWN)
       ).withName("ArmToNeutral");
+   }
+
+   public Command armLoadCoralCmd()
+   {
+      return Commands.sequence(
+         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
+         ,new WristHomeLimit(this, ArmConstants.WRIST_MAX_OUTPUT_DOWN)
+         ,new WristToPosCmd(this, ArmConstants.WRIST_POS_DOWN)
+         ,new WaitCommand(0.1)
+         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
+         ,new WaitCommand(0.1)
+         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
+         ///new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
+      ).withName("ArmLoadCoral");
    }
 
    public Command scoreOnL2PrepCmd()
    {
       return Commands.sequence(
-         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_SCORE_L2),
-         new WristToPosCmd(this, ArmConstants.WRIST_POS_SCORE_PREP_L2))
+         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_SCORE_L2)
+         ,new WristToPosCmd(this, ArmConstants.WRIST_POS_SCORE_PREP_L2)
+         ,armSetScoreLevelCmd(2)
+         )
                                  .withName("ScoreOnL2Prep");
    }
 
    public Command scoreOnL2EndCmd()
    {
       return Commands.sequence(
-         new ArmToPosCmd(null, ArmConstants.ELEVATOR_POS_SCORE_L2, ArmConstants.WRIST_POS_SCORE_PREP_L2)
+         new WristToPosCmd(this, ArmConstants.WRIST_POS_SCORE_END_L2)
+         ,armSetScoreLevelCmd(2)
       ).withName("ScoreOnL2End");
    }
 
    public Command scoreOnL3PrepCmd()
    {
       return Commands.sequence(
-         new WristToPosCmd(this, ArmConstants.WRIST_POS_UP),
-         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
+         new WristToPosCmd(this, ArmConstants.WRIST_POS_SCORE_PREP_L3)
+         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_SCORE_L3)
+         ,armSetScoreLevelCmd(3)
       ).withName("ScoreOnL3Prep");
    }
 
    public Command scoreOnL3EndCmd()
    {
       return Commands.sequence(
-         new WristToPosCmd(this, ArmConstants.WRIST_POS_SCORE_L3)
-         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
+
+         new WristToPosCmd(this, ArmConstants.WRIST_POS_SCORE_END_L3)
+         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
          
       ).withName("ScoreOnL3End");
    }
@@ -345,8 +440,9 @@ public class Arm extends SubsystemBase
    public Command scoreOnL4PrepCmd()
    {
       return Commands.sequence(
-         new WristToPosCmd(this, ArmConstants.WRIST_POS_UP),
-         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_SCORE_L4)
+         new WristToPosCmd(this, ArmConstants.WRIST_POS_SCORE_PREP_L4)
+         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_SCORE_L4)
+         ,armSetScoreLevelCmd(4)
       ).withName("ScoreOnL4Prep");
    }
 
@@ -357,15 +453,7 @@ public class Arm extends SubsystemBase
          
       ).withName("ScoreOnL4End");
    }
-
-
    
-   public Command clearCancoderFaultsCmd()
-   {
-      return run( ()-> clearCancoderFaults())
-               .withName("ClearFaults");
-   }
-
    public Command armByXboxCmd(DoubleSupplier elevValue, DoubleSupplier wristValue)
    {
       return run( ()-> {
@@ -373,6 +461,14 @@ public class Arm extends SubsystemBase
          moveWristOpenLoop(wristValue.getAsDouble());
       })
                .withName("ArmByXbox");
+   }
+
+   public Command wristHomeCmd()
+   {
+      return Commands.sequence(
+         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
+         ,new WristHomeLimit(this, ArmConstants.WRIST_MAX_OUTPUT_DOWN_VERY_SLOW)
+      ).withName("WristHome");
    }
 
 /*
@@ -447,19 +543,12 @@ public class Arm extends SubsystemBase
 
    public void ConfigureWrist()
    {
-      //CANcoderConfiguration cc_cfg = new CANcoderConfiguration();
-      //cc_cfg.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-      //cc_cfg.MagnetSensor.withMagnetOffset(Rotations.of(0.0));
-      //m_wristEncoder.getConfigurator().apply(cc_cfg);
-
       MotorOutputConfigs mconfig = new MotorOutputConfigs();
 
       mconfig.withInverted(InvertedValue.Clockwise_Positive);
       mconfig.withNeutralMode(NeutralModeValue.Brake);
 
       TalonFXConfiguration fx_cfg = new TalonFXConfiguration();
-      //fx_cfg.Feedback.FeedbackRemoteSensorID = m_wristEncoder.getDeviceID();
-      //fx_cfg.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
       fx_cfg.Feedback.SensorToMechanismRatio = 125.0/360.0;
       fx_cfg.Feedback.RotorToSensorRatio = 1.0;
 
@@ -489,67 +578,6 @@ public class Arm extends SubsystemBase
       // TODO: fix this after testing
       //m_wrist.setPosition(ArmConstants.WRIST_POS_DOWN);
    }
-/*
-   public void ExecuteWristPIDPeriodic()
-   {
-      
-      if (++printCount >= 10)
-      {
-         printCount = 0;
-
-         BaseStatusSignal.refreshAll(
-         f_fusedSensorOutOfSync,
-         sf_fusedSensorOutOfSync,
-         f_remoteSensorInvalid,
-         sf_remoteSensorInvalid,
-         fx_pos, fx_vel,
-         cc_pos, cc_vel
-         );
-
-         // If any faults happen, print them out. Sticky faults will always be present if live-fault occurs
-         boolean anyFault = sf_fusedSensorOutOfSync.getValue() || sf_remoteSensorInvalid.getValue();
-         SmartDashboard.putBoolean("CANCODER FAULT?", anyFault);
-         if (anyFault)
-         {
-            System.out.println("A fault has occurred:");
-            // If we're live, indicate live, otherwise if we're sticky indicate sticky, otherwise do nothing 
-            if (f_fusedSensorOutOfSync.getValue())
-            {
-               System.out.println("Fused sensor out of sync live-faulted");
-            } 
-            else if (sf_fusedSensorOutOfSync.getValue())
-            {
-               System.out.println("Fused sensor out of sync sticky-faulted");
-            }
-            // If we're live, indicate live, otherwise if we're sticky indicate sticky, otherwise do nothing 
-            if (f_remoteSensorInvalid.getValue())
-            {
-               System.out.println("Missing remote sensor live-faulted");
-            } 
-            else if (sf_remoteSensorInvalid.getValue())
-            {
-               System.out.println("Missing remote sensor sticky-faulted");
-            }
-         }
-
-         //if (m_joystick.getAButton()) {
-         // Clear sticky faults 
-         //  m_fx.clearStickyFaults();
-         //}
-
-         // Print out current position and velocity 
-         //System.out.println("FX Position: " + fx_pos + " FX Vel: " + fx_vel);
-         //System.out.println("CC Position: " + cc_pos + " CC Vel: " + cc_vel);
-         System.out.println("");
-      }
-       
-      //m_mechanism.update(fx_rotorPos, cc_pos, fx_pos);
-   }
-*/
-   private void clearCancoderFaults()
-   {
-      //m_wristEncoder.clearStickyFaults();
-   }
 
    private void UpdateSmartDashboard()
    {
@@ -558,6 +586,8 @@ public class Arm extends SubsystemBase
       SmartDashboard.putNumber("ARM: PID_I", m_elevatorMaster.configAccessor.closedLoop.getI());
       SmartDashboard.putNumber("ARM: PID_D", m_elevatorMaster.configAccessor.closedLoop.getD());
       SmartDashboard.putBoolean("ARM: PID ENABLED", m_elevatorUsePid);
+      SmartDashboard.putBoolean("ARM: WristLimit", isWristAtLowLimit());
+      dbArmScoreLevel.setInteger(m_armScoreLevel);
       // I don't think we need this, the subsystem is sent to the tab now
       
       dbLaserEntry.setDouble(0);

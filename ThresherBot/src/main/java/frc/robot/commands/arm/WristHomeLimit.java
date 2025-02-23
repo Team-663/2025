@@ -4,54 +4,61 @@
 
 package frc.robot.commands.arm;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Arm;
 import frc.robot.Constants.ArmConstants;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
-public class ArmToPosCmd extends Command {
+public class WristHomeLimit extends Command {
+
    Arm m_arm;
-   double m_elevatorPos;
-   double m_wristPos;
-   /** Creates a new ArmToPosCmd. */
-   public ArmToPosCmd(Arm arm, double elevatorPos, double wristPos) {
+   double m_downSpeed = 0.0;
+   boolean m_dontStart = false;
+
+   public WristHomeLimit(Arm arm, double downSpeed)
+   {
       m_arm = arm;
-      m_elevatorPos = elevatorPos;
-      m_wristPos = wristPos;
-      // Use addRequirements() here to declare subsystem dependencies.
+      m_downSpeed = downSpeed;
       addRequirements(m_arm);
+         
+      // Use addRequirements() here to declare subsystem dependencies.
    }
 
    // Called when the command is initially scheduled.
    @Override
    public void initialize()
    {
-      m_arm.setElevatorPosition(m_elevatorPos);
-      m_arm.setWristPosition(m_wristPos);
+      m_dontStart = !m_arm.isSafeToMoveWristDown();
    }
 
    // Called every time the scheduler runs while the command is scheduled.
    @Override
    public void execute()
    {
-
+      double wristPos = m_arm.getWristPosition();
+      if (!m_arm.isWristAtLowLimit())
+      {
+         m_arm.moveWristOpenLoop(m_downSpeed);
+      }
+      else
+      {
+         m_arm.moveWristOpenLoop(0.0);
+         m_arm.resetWristEncoder();
+      }
    }
 
    // Called once the command ends or is interrupted.
    @Override
-   public void end(boolean interrupted) {
+   public void end(boolean interrupted) 
+   {
+      m_arm.moveWristOpenLoop(0.0);
+      m_arm.resetWristEncoder();
    }
 
    // Returns true when the command should end.
-   @Override
-   public boolean isFinished()
+  @Override
+   public boolean isFinished() 
    {
-      boolean bothDone = false;
-      boolean elevAtPos = m_arm.isElevatorAtPosition(m_elevatorPos);
-      boolean wristAtPos = m_arm.isWristAtPosition(m_wristPos);
-      bothDone = elevAtPos && wristAtPos;
-      SmartDashboard.putBoolean("ArmCMD: ElevDone", bothDone);
-      return (bothDone);
+      return (m_arm.isWristAtLowLimit());
    }
 }

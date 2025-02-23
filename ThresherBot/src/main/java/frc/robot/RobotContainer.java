@@ -27,11 +27,13 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.arm.ArmToPosCmd;
 import frc.robot.commands.arm.ElevatorToPosCmd;
 import frc.robot.commands.arm.WristToPosCmd;
+import frc.robot.commands.arm.WristHomeLimit;
 import swervelib.SwerveInputStream;
 
 public class RobotContainer {
@@ -68,32 +70,22 @@ public class RobotContainer {
 
    private void configureBindings()
    {
-      SmartDashboard.putData("Clear CCd Faults", m_arm.clearCancoderFaultsCmd());
-
       SmartDashboard.putData("Align with Tag Cmd", new CenterOnAprilTag(drivebase));
       Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
       Command elevNeutralCmd = m_arm.setElevPositionCmd(ArmConstants.ELEVATOR_POS_NEUTRAL);
+
       
       drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
       m_arm.setDefaultCommand(m_arm.armStopCmd());
 
       // DRIVER CONTROLS   
-      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      
+      driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
 
-      driverXbox.start().whileTrue(Commands.none());
       driverXbox.back().whileTrue(Commands.none());
       driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
       driverXbox.rightBumper().onTrue(Commands.none());
 
-      /*
-       operatorXbox.axisGreaterThan(
-                                    XboxController.Axis.kLeftY.value, 0.1).or(
-                                    operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.1)).whileTrue(
-                                       m_shooter.armByXboxCommand(() -> -operatorXbox.getLeftY()));
-
-       */
       // OPERATOR CONTROLS
       operatorXbox.axisGreaterThan(XboxController.Axis.kLeftY.value, 0.1)
          .or(operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.1))
@@ -102,18 +94,17 @@ public class RobotContainer {
       operatorXbox.axisGreaterThan(XboxController.Axis.kRightY.value, 0.1)
       .or(operatorXbox.axisLessThan(XboxController.Axis.kRightY.value, -0.1))
          .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()*-1, ()->operatorXbox.getRightY()*-1.0));
-
-      operatorXbox.y().onTrue(new ElevatorToPosCmd(m_arm, ArmConstants.ELEVATOR_POS_NEUTRAL));
-      operatorXbox.x().onTrue(new ElevatorToPosCmd(m_arm, ArmConstants.ELEVATOR_POS_SCORE_L3));
-
-      operatorXbox.b().onTrue(new WristToPosCmd(m_arm, ArmConstants.WRIST_POS_SCORE_L3));
-      operatorXbox.a().onTrue(new WristToPosCmd(m_arm, ArmConstants.WRIST_POS_ELV_SAFE));
+         
       operatorXbox.start().onTrue(Commands.runOnce(m_arm::resetAllArmEncoders));
+      operatorXbox.x().onTrue(m_arm.armLoadCoralCmd());
+      
+      operatorXbox.a().onTrue(m_arm.scoreOnL2PrepCmd());
+      operatorXbox.b().onTrue(m_arm.scoreOnL3PrepCmd());
+      operatorXbox.y().onTrue(m_arm.scoreOnL4PrepCmd());
+      operatorXbox.povDown().onTrue(m_arm.moveArmToNeutralCmd());
 
-      //driverXbox.leftTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getLeftTriggerAxis()))
-      //.onFalse(m_arm.armStopElevator());
-      //driverXbox.rightTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getRightTriggerAxis()*-1.0))
-      //.onFalse(m_arm.armStopElevator());
+      operatorXbox.leftBumper().onTrue(m_arm.armScoreCoralCmd());
+      operatorXbox.rightBumper().onTrue(m_arm.wristHomeCmd());
 
    
    }
