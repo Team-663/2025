@@ -70,7 +70,10 @@ public class RobotContainer {
 
    private void configureBindings()
    {
-      SmartDashboard.putData("Align with Tag Cmd", new CenterOnAprilTag(drivebase));
+      CenterOnAprilTag centerCommand =  new CenterOnAprilTag(drivebase);
+
+      SmartDashboard.putData("Align with Tag Cmd", centerCommand);
+
       Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
       Command elevNeutralCmd = m_arm.setElevPositionCmd(ArmConstants.ELEVATOR_POS_NEUTRAL);
@@ -80,6 +83,7 @@ public class RobotContainer {
       m_arm.setDefaultCommand(m_arm.armStopCmd());
 
       // DRIVER CONTROLS   
+
       driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
 
       driverXbox.back().whileTrue(Commands.none());
