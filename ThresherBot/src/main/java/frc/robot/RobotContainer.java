@@ -84,6 +84,9 @@ public class RobotContainer {
 
       // DRIVER CONTROLS   
 
+      driverXbox.y().whileTrue(centerCommand);
+      driverXbox.x().onTrue(Commands.runOnce(drivebase::stopSwerveDrive));
+
       driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
 
       driverXbox.back().whileTrue(Commands.none());
