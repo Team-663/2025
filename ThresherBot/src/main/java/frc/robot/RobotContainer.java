@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
@@ -26,8 +27,13 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.commands.arm.ArmToPosCmd;
+import frc.robot.commands.arm.ElevatorToPosCmd;
+import frc.robot.commands.arm.WristToPosCmd;
+import frc.robot.commands.arm.WristHomeLimit;
 import swervelib.SwerveInputStream;
 
 public class RobotContainer {
@@ -63,43 +69,49 @@ public class RobotContainer {
    }
 
    private void configureBindings()
-   {  CenterOnAprilTag centerCommand =  new CenterOnAprilTag(drivebase);
-      SmartDashboard.putData("Clear CCd Faults", m_arm.clearCancoderFaultsCmd());
+   {
+      CenterOnAprilTag centerCommand =  new CenterOnAprilTag(drivebase);
 
       SmartDashboard.putData("Align with Tag Cmd", centerCommand);
+
       Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
+      Command elevNeutralCmd = m_arm.setElevPositionCmd(ArmConstants.ELEVATOR_POS_NEUTRAL);
 
+      
       drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
-      m_arm.setDefaultCommand(m_arm.armStopElevator());
+      m_arm.setDefaultCommand(m_arm.armStopCmd());
 
       // DRIVER CONTROLS   
-      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-      driverXbox.b().onTrue(m_arm.setElevPositionCmd(20.0));
-     // driverXbox.y().onTrue(m_arm.setElevPositionCmd(0.0));
+
       driverXbox.y().whileTrue(centerCommand);
       driverXbox.x().onTrue(Commands.runOnce(drivebase::stopSwerveDrive));
 
-      driverXbox.start().whileTrue(Commands.none());
+      driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
+
       driverXbox.back().whileTrue(Commands.none());
       driverXbox.leftBumper().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
       driverXbox.rightBumper().onTrue(Commands.none());
 
-      /*
-       operatorXbox.axisGreaterThan(
-                                    XboxController.Axis.kLeftY.value, 0.1).or(
-                                    operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.1)).whileTrue(
-                                       m_shooter.armByXboxCommand(() -> -operatorXbox.getLeftY()));
-
-       */
       // OPERATOR CONTROLS
       operatorXbox.axisGreaterThan(XboxController.Axis.kLeftY.value, 0.1)
          .or(operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.1))
-         .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()));
-      //driverXbox.leftTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getLeftTriggerAxis()))
-      //.onFalse(m_arm.armStopElevator());
-      //driverXbox.rightTrigger(0.01).whileTrue(m_arm.armByXboxCmd(()->driverXbox.getRightTriggerAxis()*-1.0))
-      //.onFalse(m_arm.armStopElevator());
+         .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()*-1, ()->operatorXbox.getRightY()*-1.0));
+
+      operatorXbox.axisGreaterThan(XboxController.Axis.kRightY.value, 0.1)
+      .or(operatorXbox.axisLessThan(XboxController.Axis.kRightY.value, -0.1))
+         .whileTrue(m_arm.armByXboxCmd(()->operatorXbox.getLeftY()*-1, ()->operatorXbox.getRightY()*-1.0));
+         
+      operatorXbox.start().onTrue(Commands.runOnce(m_arm::resetAllArmEncoders));
+      operatorXbox.x().onTrue(m_arm.armLoadCoralCmd());
+      
+      operatorXbox.a().onTrue(m_arm.scoreOnL2PrepCmd());
+      operatorXbox.b().onTrue(m_arm.scoreOnL3PrepCmd());
+      operatorXbox.y().onTrue(m_arm.scoreOnL4PrepCmd());
+      operatorXbox.povDown().onTrue(m_arm.moveArmToNeutralCmd());
+
+      operatorXbox.leftBumper().onTrue(m_arm.armScoreCoralCmd());
+      operatorXbox.rightBumper().onTrue(m_arm.wristHomeCmd());
 
    
    }
@@ -116,5 +128,12 @@ public class RobotContainer {
 
    public void setMotorBrake(boolean brake) {
       drivebase.setMotorBrake(brake);
+   }
+
+   public void setArmHereSafe()
+   {
+      //m_arm.setElevatorHere();
+      //m_arm.setWristHere();
+      m_arm.setArmSafe();
    }
 }
