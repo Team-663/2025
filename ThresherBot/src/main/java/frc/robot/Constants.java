@@ -10,10 +10,13 @@ import swervelib.math.Matter;
 
 public final class Constants 
 {
-   public static final double ROBOT_MASS = (148 - 20.3) * 0.453592; // 32lbs * kg per pound
+   public static final double ROBOT_MASS = (93.0) * 0.453592; // 32lbs * kg per pound
    public static final Matter CHASSIS = new Matter(new Translation3d(0, 0, Units.inchesToMeters(8)), ROBOT_MASS);
    public static final double LOOP_TIME = 0.13; // s, 20ms + 110ms sprk max velocity lag
 
+   public static final double AUTO_MAX_STRAFE_CHASSIS_SPEED = Units.feetToMeters(3.0); // 3 ft/s max chassis speed in auto
+   public static final double AUTO_MAX_DRIVE_CHASSIS_SPEED = Units.feetToMeters(3.0); // 3 ft/s max chassis speed in auto
+   public static final double AUTO_LASER_DIST_AT_BUMPERS = 2.5;
    // CAN IDs HERE
    // BackLeftDrive/Angle:    4,  5
    // BackRightDrive/Angle:   6,  7
@@ -26,7 +29,6 @@ public final class Constants
    public static final int ARM_WRIST_CAN_ID       = 14;
    public static final int ARM_ENCODER_CAN_ID     = 15;
    public static final int LASER_CAN_A_ID         = 16;
-   public static final int LASER_CAN_B_ID         = 17;
 
    public static class DrivebaseConstants
    {
@@ -35,6 +37,8 @@ public final class Constants
       // L2 Gear ratio (non-FOC ) free speed is 15.5 ft/s
       public static final double WHEEL_LOCK_TIME = 10; // seconds
 
+      public static final double LL_TX_OFFSET_LEFT_CORAL_AT_36IN = 10.6;
+      public static final double LL_TX_OFFSET_RIGHT_CORAL_AT_36IN = -10.6;
    }
 
 
@@ -81,6 +85,7 @@ public final class Constants
       public static final double ELEVATOR_POS_SCORE_L2 = 10.0; // was 10.0, sus
       public static final double ELEVATOR_POS_SCORE_L3 = 1.35;
       public static final double ELEVATOR_POS_SCORE_L4 = ELEVATOR_POS_MAX_HEIGHT;
+      public static final double ELEVATOR_POS_ALGAE_UPPER = 17.0;
 
       public static final double WRIST_POS_DOWN     = 0.0;
       public static final double WRIST_POS_MAX_ANGLE = 215.0;
@@ -93,6 +98,7 @@ public final class Constants
       public static final double WRIST_POS_SCORE_END_L4 = 66.0;
       public static final double WRIST_POS_UP = 175.0;
       public static final double WRIST_POS_VERY_SLOW = 10.0;
+      public static final double WRIST_POS_RIGHT_ANGLE = 90.0;
 
    }
 }

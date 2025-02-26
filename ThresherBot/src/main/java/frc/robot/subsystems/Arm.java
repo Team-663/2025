@@ -382,6 +382,7 @@ public class Arm extends SubsystemBase
    {
       return Commands.sequence(
           new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
+          ,new WristHomeLimit(this, ArmConstants.WRIST_MAX_OUTPUT_DOWN)
          ,new WristToPosCmd(this, ArmConstants.WRIST_POS_DOWN)
       ).withName("ArmToNeutral");
    }
@@ -389,10 +390,8 @@ public class Arm extends SubsystemBase
    public Command armLoadCoralCmd()
    {
       return Commands.sequence(
-         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
-         ,new WristHomeLimit(this, ArmConstants.WRIST_MAX_OUTPUT_DOWN)
-         ,new WristToPosCmd(this, ArmConstants.WRIST_POS_DOWN)
-         ,new WaitCommand(0.1)
+         moveArmToNeutralCmd()
+         ,new WaitCommand(0.2)
          ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
          ,new WaitCommand(0.1)
          ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
@@ -471,19 +470,30 @@ public class Arm extends SubsystemBase
       ).withName("WristHome");
    }
 
-/*
-   public Command elevatorByXbox(DoubleSupplier elevValue)
+   public Command algaeFromLowerCmd()
    {
-      return run( ()-> moveElevatorOpenLoop(elevValue.getAsDouble()))
-               .withName("ElevatorByXbox");
+      return Commands.sequence(
+         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
+         ,new WristToPosCmd(this, ArmConstants.WRIST_POS_RIGHT_ANGLE)
+      ).withName("AlgaeFromLower");
    }
 
-   public Command wristByXboxCmd(DoubleSupplier wristValue)
+   public Command algaeFromUpperCmd()
    {
-      return run( ()-> moveWristOpenLoop(wristValue.getAsDouble()))
-               .withName("WristByXbox");
+      return Commands.sequence(
+         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_ALGAE_UPPER)
+         ,new WristToPosCmd(this, ArmConstants.WRIST_POS_RIGHT_ANGLE)
+      ).withName("AlgaeFromUpper");
    }
-*/
+
+   public Command autoScoreOnL4Cmd()
+   {
+      return Commands.sequence(
+         scoreOnL4PrepCmd()
+         ,new WaitCommand(0.1)
+         ,scoreOnL4EndCmd()
+      ).withName("AutoScoreOnL4");
+   }
 
    public void armStopIfClosedLoop()
    {
@@ -541,6 +551,18 @@ public class Arm extends SubsystemBase
 
    }
 
+   public void setWristNeutralMode(boolean brake)
+   {
+      if (brake)
+      {
+         m_wrist.setNeutralMode(NeutralModeValue.Brake);
+      }
+      else
+      {
+         m_wrist.setNeutralMode(NeutralModeValue.Coast);
+      }
+   }
+
    public void ConfigureWrist()
    {
       MotorOutputConfigs mconfig = new MotorOutputConfigs();
@@ -568,7 +590,7 @@ public class Arm extends SubsystemBase
       fx_cfg.withMotorOutput(mconfig);
 
       StatusCode status = m_wrist.getConfigurator().apply(fx_cfg);
-
+      
       if (!status.isOK())
       {
          System.out.println("Wrist configuration failed: " + status);

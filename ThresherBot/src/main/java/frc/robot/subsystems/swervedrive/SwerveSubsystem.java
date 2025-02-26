@@ -4,22 +4,36 @@
 
 package frc.robot.subsystems.swervedrive;
 
+import static edu.wpi.first.units.Units.Inch;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meter;
 import java.io.File;
 import java.util.Arrays;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.commands.PathfindingCommand;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.util.PathPlannerLogging;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.DrivebaseConstants;
 import swervelib.SwerveController;
 import swervelib.SwerveDrive;
@@ -29,9 +43,15 @@ import swervelib.parser.SwerveDriveConfiguration;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
+import au.grapplerobotics.LaserCan;
+import au.grapplerobotics.ConfigurationFailedException;
+
 
 public class SwerveSubsystem extends SubsystemBase {
    private final SwerveDrive swerveDrive;
+   private final LaserCan m_laser = new LaserCan(Constants.LASER_CAN_A_ID);
+   private boolean m_laserValidMeasurement;
+   private double m_laserDistInches = 0.0;
 
    public SwerveSubsystem(File directory) {
       SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
@@ -63,7 +83,7 @@ public class SwerveSubsystem extends SubsystemBase {
       // possible
 
       // TODO: do we need this in the future?
-      // setupPathPlanner();
+      setupPathPlanner();
    }
 
    public SwerveSubsystem(SwerveDriveConfiguration driveCfg, SwerveControllerConfiguration controllerCfg) {
@@ -72,11 +92,37 @@ public class SwerveSubsystem extends SubsystemBase {
             DrivebaseConstants.MAX_SPEED,
             new Pose2d(new Translation2d(Meter.of(2), Meter.of(0)),
                   Rotation2d.fromDegrees(0)));
+
    }
 
    @Override
    public void periodic() {
       // This method will be called once per scheduler run
+      //SmartDashboard.putNumber("POSE: Xinch", Units.metersToInches(getPose().getX()));
+      //SmartDashboard.putNumber("POSE: Yinch", Units.metersToInches(getPose().getY()));
+      updateLaserDistance();
+      SmartDashboard.putNumber("POSE: Xm", getPose().getX());
+      SmartDashboard.putNumber("POSE: Ym", getPose().getY());
+      SmartDashboard.putNumber("LASER DIST in", m_laserDistInches);
+   }
+
+   private void updateLaserDistance()
+   {
+      LaserCan.Measurement measurement = m_laser.getMeasurement();
+      if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) 
+      {
+         m_laserValidMeasurement = true;
+         m_laserDistInches = (double)measurement.distance_mm / 25.4;
+      }
+      else
+      {
+         m_laserValidMeasurement = false;
+      }
+   }
+
+   public double getLaserDistanceInches()
+   {
+      return m_laserDistInches;
    }
 
    public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
@@ -354,6 +400,77 @@ public class SwerveSubsystem extends SubsystemBase {
     */
    public SwerveDriveConfiguration getSwerveDriveConfiguration() {
       return swerveDrive.swerveDriveConfiguration;
+   }
+
+
+   public void setupPathPlanner()
+   {
+      RobotConfig config;
+      try {
+         config = RobotConfig.fromGUISettings();
+
+         final boolean enableFeedforward = true;
+         // Configure AutoBuilder last
+         AutoBuilder.configure(
+               this::getPose,
+               // Robot pose supplier
+               this::resetOdometry,
+               // Method to reset odometry (will be called if your auto has a starting pose)
+               this::getRobotVelocity,
+               // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+               (speedsRobotRelative, moduleFeedForwards) -> {
+                  if (enableFeedforward) {
+                     swerveDrive.drive(
+                           speedsRobotRelative,
+                           swerveDrive.kinematics.toSwerveModuleStates(speedsRobotRelative),
+                           moduleFeedForwards.linearForces());
+                  } else {
+                     swerveDrive.setChassisSpeeds(speedsRobotRelative);
+                  }
+               },
+               // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also
+               // optionally outputs individual module feedforwards
+               new PPHolonomicDriveController(
+                     // PPHolonomicController is the built in path following controller for holonomic
+                     // drive trains
+                     new PIDConstants(5.0, 0.0, 0.0),
+                     // Translation PID constants
+                     new PIDConstants(5.0, 0.0, 0.0)
+               // Rotation PID constants
+               ),
+               config,
+               // The robot configuration
+               () -> {
+                  // Boolean supplier that controls when the path will be mirrored for the red
+                  // alliance
+                  // This will flip the path being followed to the red side of the field.
+                  // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+
+                  var alliance = DriverStation.getAlliance();
+                  if (alliance.isPresent()) {
+                     return alliance.get() == DriverStation.Alliance.Red;
+                  }
+                  return false;
+               },
+               this
+         // Reference to this subsystem to set requirements
+         );
+
+      } catch (Exception e) {
+         // Handle exception as needed
+         e.printStackTrace();
+      }
+
+      // Preload PathPlanner Path finding
+      // IF USING CUSTOM PATHFINDER ADD BEFORE THIS LINE
+      PathfindingCommand.warmupCommand().schedule();
+
+   }
+
+   public Command getAutonomousCommand(String pathName)
+   {
+    // Create a path following command using AutoBuilder. This will also trigger event markers.
+      return new PathPlannerAuto(pathName);
    }
 
    /**
