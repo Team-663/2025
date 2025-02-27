@@ -53,6 +53,7 @@ public class SwerveSubsystem extends SubsystemBase {
    private boolean m_laserValidMeasurement;
    private double m_laserDistInches = 0.0;
    private Boolean m_bumpersAtWall = false;
+   private boolean m_autoMoveToRight = false;
 
    public SwerveSubsystem(File directory) {
       SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
@@ -134,6 +135,18 @@ public class SwerveSubsystem extends SubsystemBase {
    {
       return m_laserDistInches;
    }
+
+   public void setAutoMoveToRight(boolean moveRight)
+   {
+      m_autoMoveToRight = moveRight;
+   }
+
+   public boolean getAutoMoveToRight()
+   {
+      return m_autoMoveToRight;
+   }
+
+   
 
    public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
          DoubleSupplier angularRotationX) {

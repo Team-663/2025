@@ -25,6 +25,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -39,6 +40,8 @@ import frc.robot.commands.arm.ElevatorToPosCmd;
 import frc.robot.commands.arm.WristToPosCmd;
 import frc.robot.commands.arm.WristHomeLimit;
 import frc.robot.commands.drivebase.RotateAndAlignToTag;
+import frc.robot.commands.auto.autoStraightToSelectedLevel;
+import swervelib.SwerveDrive;
 import swervelib.SwerveInputStream;
 
 public class RobotContainer {
@@ -49,7 +52,8 @@ public class RobotContainer {
    private final CommandXboxController driverXbox = new CommandXboxController(OperatorConstants.XBOX_DRIVER_PORT);
    private final CommandXboxController operatorXbox = new CommandXboxController(OperatorConstants.XBOX_OPERATOR_PORT);
    private final SwerveSubsystem drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
-   private final SendableChooser<Command> autoChooser;
+   private final SendableChooser<Command> autoChooser2;
+   //private final SendableChooser<Boolean> autoMoveRight;
 
    SwerveInputStream driveAngularVelocity = SwerveInputStream.of(drivebase.getSwerveDrive(),
          () -> driverXbox.getLeftY() *-1.0,
@@ -65,65 +69,94 @@ public class RobotContainer {
 
    public RobotContainer() 
    {
-      autoChooser = AutoBuilder.buildAutoChooser();
-      configureAutoModes();
-      //autoChooser.addOption("driveToFFromHomeAndL4", new PathPlannerAuto("driveToFFromHomeAndL4"));
-     
-      // Configure the trigger bindings
-      configureBindings();
-      DriverStation.silenceJoystickConnectionWarning(true);
-   }
-
-   private void configureAutoModes()
-   {
       NamedCommands.registerCommand("ScoreOnL4Prep", m_arm.scoreOnL4PrepCmd());
       NamedCommands.registerCommand("ScoreCoral", m_arm.armScoreCoralCmd());
       NamedCommands.registerCommand("ArmNeutral", m_arm.moveArmToNeutralCmd());
       
-      SmartDashboard.putData("Auto Mode", autoChooser);
+      autoChooser2 = AutoBuilder.buildAutoChooser();
+      configureAutoModes();
+     
+      // Configure the trigger bindings
+      configureBindings();
+      DriverStation.silenceJoystickConnectionWarning(true);
 
+      Shuffleboard.getTab("Competition").add("Auto Mode", autoChooser2).withWidget("ComboBoxChooser");
+   }
+
+   private void configureAutoModes()
+   {
+      //SmartDashboard.clearPersistent("Auto Mode");
+      SmartDashboard.putData("Auto Mode", autoChooser2);
+/*
       Command straightAndScoreAtSelectedLevel = new SequentialCommandGroup(
          m_arm.moveArmToNeutralCmd()
          ,m_arm.armPrepCoralCmd()
          ,new DriveStraightUntilAtDistCmd(drivebase, Constants.AUTO_LASER_DIST_AT_BUMPERS, false)
          ,new WaitCommand(0.5)
          ,m_arm.armScoreCoralCmd()
-         
       );
+      */
 
-      Command straightScoreL2 = new SequentialCommandGroup(
+      Command straightScoreL2left = new SequentialCommandGroup(
          m_arm.armSetScoreLevelCmd(2)
-         ,straightAndScoreAtSelectedLevel
-         ,new PathPlannerAuto("driveBackwards3ft")
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
+         ,new PathPlannerAuto("fromFrontScoreToLeft")
+         ,m_arm.moveArmToNeutralCmd()
       );
 
-      Command straightScoreL3 = new SequentialCommandGroup(
+      Command straightScoreL3left = new SequentialCommandGroup(
          m_arm.armSetScoreLevelCmd(3)
-         ,straightAndScoreAtSelectedLevel
-         ,new PathPlannerAuto("driveBackwards3ft")
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
+         ,new PathPlannerAuto("fromFrontScoreToLeft")
+         ,m_arm.moveArmToNeutralCmd()
       );
 
-      Command straightScoreL4 = new SequentialCommandGroup(
+      Command straightScoreL4left = new SequentialCommandGroup(
          m_arm.armSetScoreLevelCmd(4)
-         ,straightAndScoreAtSelectedLevel
-         ,new PathPlannerAuto("driveBackwards3ft")
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
+         ,new PathPlannerAuto("fromFrontScoreToLeft")
+         ,m_arm.moveArmToNeutralCmd()
+      );
+
+      Command straightScoreL2right = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(2)
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
+         ,new PathPlannerAuto("fromFrontScoreToRight")
+         ,m_arm.moveArmToNeutralCmd()
+      );
+
+      Command straightScoreL3right = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(3)
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
+         ,new PathPlannerAuto("fromFrontScoreToRight")
+         ,m_arm.moveArmToNeutralCmd()
+      );
+
+      Command straightScoreL4right = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(4)
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
+         ,new PathPlannerAuto("fromFrontScoreToRight")
+         ,m_arm.moveArmToNeutralCmd()
       );
 
       Command straightScoreL4_TEST = new SequentialCommandGroup(
          m_arm.armSetScoreLevelCmd(4)
-         ,straightAndScoreAtSelectedLevel
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
          ,new PathPlannerAuto("fromFrontScoreToRight")
-         //,new PathPlannerAuto("fromFrontScoreToLeft")
+         ,m_arm.moveArmToNeutralCmd()
 
       );
 
-      autoChooser.addOption("forward3ft", new PathPlannerAuto("driveForwards3ft"));
-      autoChooser.addOption("AutoStraightL2", straightScoreL2);
-      autoChooser.addOption("AutoStraightL3", straightScoreL3);
-      autoChooser.addOption("AutoStraightL4", straightScoreL4);
-      autoChooser.addOption("DEBUG: L4Test", straightScoreL4_TEST);
-      autoChooser.addOption("scoreOnJ4_RISKY", new PathPlannerAuto("driveToJFromHomeAndL4"));
-      
+      autoChooser2.addOption("forward3ft", new PathPlannerAuto("driveForwards3ft"));
+      autoChooser2.addOption("Straight L2 -> Left", straightScoreL2left);
+      autoChooser2.addOption("Straight L3 -> Left", straightScoreL3left);
+      autoChooser2.addOption("Straight L4 -> Left", straightScoreL4left);
+      autoChooser2.addOption("Straight L2 -> Right", straightScoreL2right);
+      autoChooser2.addOption("Straight L3 -> Right", straightScoreL3right);
+      autoChooser2.addOption("Straight L4 -> Right", straightScoreL4right);
+      autoChooser2.addOption("DEBUG: L4Test", straightScoreL4_TEST);
+      autoChooser2.addOption("scoreOnJ4 - RISKY", new PathPlannerAuto("driveToJFromHomeAndL4"));
+      autoChooser2.setDefaultOption("Straight L4 -> Left", straightScoreL4left);
    }
 
    private void configureBindings()
@@ -135,15 +168,10 @@ public class RobotContainer {
       Command driveFieldOrientedDirectAngle = drivebase.driveFieldOriented(driveDirectAngle);
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
 
-      // Something is wrong with this
-     
-      
-      
       drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
       m_arm.setDefaultCommand(m_arm.armStopCmd());
 
       // DRIVER CONTROLS   
-
       driverXbox.x().onTrue(Commands.runOnce(drivebase::stopSwerveDrive));
 
       driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
@@ -153,8 +181,6 @@ public class RobotContainer {
       driverXbox.rightBumper().whileTrue(new RotateAndAlignToTag(drivebase, ()->driverXbox.getLeftY()*-1.0, Constants.DrivebaseConstants.LL_TX_OFFSET_RIGHT_CORAL_AT_36IN, false));
       driverXbox.a().whileTrue(new RotateAndAlignToTag(drivebase, ()->driverXbox.getLeftY()*-1.0, 0.0, false));
       
-      // THIS DOESNT WORK
-      //driverXbox.y().onTrue(straightScoreL4);
       // OPERATOR CONTROLS
       operatorXbox.axisGreaterThan(XboxController.Axis.kLeftY.value, 0.2)
          .or(operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.2))
@@ -186,7 +212,7 @@ public class RobotContainer {
     */
    public Command getAutonomousCommand()
    {
-      return autoChooser.getSelected();
+      return autoChooser2.getSelected();
    }
 
    public void setMotorBrake(boolean brake) {
