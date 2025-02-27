@@ -83,6 +83,7 @@ public class Arm extends SubsystemBase
 
    private ShuffleboardTab tab = Shuffleboard.getTab("Arm");
    private ComplexWidget dbArmSubsystemEntry = tab.add(this);
+
    private GenericEntry dbLaserEntry = tab.add("Laser Distance", 0).getEntry();
    private GenericEntry dbWristAngle = tab.add("Wrist Angle", 0).getEntry();
    private GenericEntry dbWristSetpoint = tab.add("Wrist Set", 0).getEntry();
@@ -327,6 +328,17 @@ public class Arm extends SubsystemBase
                Map.entry(2, scoreOnL2EndCmd()),
                Map.entry(3, scoreOnL3EndCmd()),
                Map.entry(4, scoreOnL4EndCmd())),
+            this::getScoreLevel);
+   }
+
+   public Command armPrepCoralCmd()
+   {
+      return new SelectCommand<>(
+            // Maps selector values to commands
+            Map.ofEntries(
+               Map.entry(2, scoreOnL2PrepCmd()),
+               Map.entry(3, scoreOnL3PrepCmd()),
+               Map.entry(4, scoreOnL4PrepCmd())),
             this::getScoreLevel);
    }
    /*

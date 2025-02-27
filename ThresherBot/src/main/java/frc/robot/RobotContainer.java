@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.arm.ArmToPosCmd;
@@ -64,18 +65,65 @@ public class RobotContainer {
 
    public RobotContainer() 
    {
-      NamedCommands.registerCommand("ScoreOnL4Prep", m_arm.scoreOnL4PrepCmd());
-      NamedCommands.registerCommand("ScoreCoral", m_arm.armScoreCoralCmd());
-      NamedCommands.registerCommand("ArmNeutral", m_arm.moveArmToNeutralCmd());
       autoChooser = AutoBuilder.buildAutoChooser();
-      SmartDashboard.putData("Auto Mode", autoChooser);
-      autoChooser.addOption("driveForwardALittle", new PathPlannerAuto("driveForward6ft"));
-      autoChooser.addOption("scoreOnJ4", new PathPlannerAuto("driveToJFromHomeAndL4"));
+      configureAutoModes();
       //autoChooser.addOption("driveToFFromHomeAndL4", new PathPlannerAuto("driveToFFromHomeAndL4"));
      
       // Configure the trigger bindings
       configureBindings();
       DriverStation.silenceJoystickConnectionWarning(true);
+   }
+
+   private void configureAutoModes()
+   {
+      NamedCommands.registerCommand("ScoreOnL4Prep", m_arm.scoreOnL4PrepCmd());
+      NamedCommands.registerCommand("ScoreCoral", m_arm.armScoreCoralCmd());
+      NamedCommands.registerCommand("ArmNeutral", m_arm.moveArmToNeutralCmd());
+      
+      SmartDashboard.putData("Auto Mode", autoChooser);
+
+      Command straightAndScoreAtSelectedLevel = new SequentialCommandGroup(
+         m_arm.moveArmToNeutralCmd()
+         ,m_arm.armPrepCoralCmd()
+         ,new DriveStraightUntilAtDistCmd(drivebase, Constants.AUTO_LASER_DIST_AT_BUMPERS, false)
+         ,new WaitCommand(0.5)
+         ,m_arm.armScoreCoralCmd()
+         
+      );
+
+      Command straightScoreL2 = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(2)
+         ,straightAndScoreAtSelectedLevel
+         ,new PathPlannerAuto("driveBackwards3ft")
+      );
+
+      Command straightScoreL3 = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(3)
+         ,straightAndScoreAtSelectedLevel
+         ,new PathPlannerAuto("driveBackwards3ft")
+      );
+
+      Command straightScoreL4 = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(4)
+         ,straightAndScoreAtSelectedLevel
+         ,new PathPlannerAuto("driveBackwards3ft")
+      );
+
+      Command straightScoreL4_TEST = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(4)
+         ,straightAndScoreAtSelectedLevel
+         ,new PathPlannerAuto("fromFrontScoreToRight")
+         //,new PathPlannerAuto("fromFrontScoreToLeft")
+
+      );
+
+      autoChooser.addOption("forward3ft", new PathPlannerAuto("driveForwards3ft"));
+      autoChooser.addOption("AutoStraightL2", straightScoreL2);
+      autoChooser.addOption("AutoStraightL3", straightScoreL3);
+      autoChooser.addOption("AutoStraightL4", straightScoreL4);
+      autoChooser.addOption("DEBUG: L4Test", straightScoreL4_TEST);
+      autoChooser.addOption("scoreOnJ4_RISKY", new PathPlannerAuto("driveToJFromHomeAndL4"));
+      
    }
 
    private void configureBindings()
@@ -88,12 +136,8 @@ public class RobotContainer {
       Command driveFieldOrientedAnglularVelocity = drivebase.driveFieldOriented(driveAngularVelocity);
 
       // Something is wrong with this
-      Command straightScoreL3 = new SequentialCommandGroup(
-         //m_arm.moveArmToNeutralCmd()
-         //,m_arm.scoreOnL3PrepCmd()
-         new DriveStraightUntilAtDistCmd(drivebase, Constants.AUTO_LASER_DIST_AT_BUMPERS, false)
-         //,m_arm.armScoreCoralCmd()         
-      );
+     
+      
       
       drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity);
       m_arm.setDefaultCommand(m_arm.armStopCmd());
@@ -110,7 +154,7 @@ public class RobotContainer {
       driverXbox.a().whileTrue(new RotateAndAlignToTag(drivebase, ()->driverXbox.getLeftY()*-1.0, 0.0, false));
       
       // THIS DOESNT WORK
-      //driverXbox.y().onTrue(straightScoreL3);
+      //driverXbox.y().onTrue(straightScoreL4);
       // OPERATOR CONTROLS
       operatorXbox.axisGreaterThan(XboxController.Axis.kLeftY.value, 0.2)
          .or(operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.2))

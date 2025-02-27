@@ -52,6 +52,7 @@ public class SwerveSubsystem extends SubsystemBase {
    private final LaserCan m_laser = new LaserCan(Constants.LASER_CAN_A_ID);
    private boolean m_laserValidMeasurement;
    private double m_laserDistInches = 0.0;
+   private Boolean m_bumpersAtWall = false;
 
    public SwerveSubsystem(File directory) {
       SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
@@ -104,6 +105,7 @@ public class SwerveSubsystem extends SubsystemBase {
       SmartDashboard.putNumber("POSE: Xm", getPose().getX());
       SmartDashboard.putNumber("POSE: Ym", getPose().getY());
       SmartDashboard.putNumber("LASER DIST in", m_laserDistInches);
+      SmartDashboard.putBoolean("UP AGAINST WALL", m_bumpersAtWall);
    }
 
    private void updateLaserDistance()
@@ -113,6 +115,14 @@ public class SwerveSubsystem extends SubsystemBase {
       {
          m_laserValidMeasurement = true;
          m_laserDistInches = (double)measurement.distance_mm / 25.4;
+         if (m_laserDistInches < Constants.AUTO_LASER_DIST_AT_BUMPERS)
+         {
+            m_bumpersAtWall = true;
+         }
+         else
+         {
+            m_bumpersAtWall = false;
+         }
       }
       else
       {
@@ -323,6 +333,11 @@ public class SwerveSubsystem extends SubsystemBase {
     */
    public Rotation2d getHeading() {
       return getPose().getRotation();
+   }
+
+   public double getMaxAngluarVelocityAuto()
+   {
+      return swerveDrive.getMaximumChassisAngularVelocity() * 0.5;
    }
 
    /**
