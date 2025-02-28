@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import au.grapplerobotics.CanBridge;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -38,6 +39,7 @@ public class Robot extends TimedRobot {
 
    public Robot() {
       instance = this;
+      CanBridge.runTCP();
    }
 
    public static Robot getInstance() {
@@ -87,6 +89,7 @@ public class Robot extends TimedRobot {
    @Override
    public void disabledInit() {
       m_robotContainer.setMotorBrake(true);
+      m_robotContainer.setWristBrake(false);
       disabledTimer.reset();
       disabledTimer.start();
    }
@@ -108,6 +111,7 @@ public class Robot extends TimedRobot {
    public void autonomousInit() {
       m_robotContainer.setArmHereSafe();
       m_robotContainer.setMotorBrake(true);
+      m_robotContainer.setWristBrake(true);
       m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
       // schedule the autonomous command (example)
@@ -128,6 +132,7 @@ public class Robot extends TimedRobot {
       // continue until interrupted by another command, remove
       // this line or comment it out.
       m_robotContainer.setArmHereSafe();
+      m_robotContainer.setWristBrake(true);
       if (m_autonomousCommand != null) {
          m_autonomousCommand.cancel();
       } else {
