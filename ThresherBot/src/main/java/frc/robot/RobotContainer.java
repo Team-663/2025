@@ -80,13 +80,13 @@ public class RobotContainer {
       configureBindings();
       DriverStation.silenceJoystickConnectionWarning(true);
 
-      Shuffleboard.getTab("Competition").add("Auto Mode", autoChooser2).withWidget("ComboBoxChooser");
+      Shuffleboard.getTab("Competition").add("Comp Auto", autoChooser2).withWidget("ComboBoxChooser");
    }
 
    private void configureAutoModes()
    {
       //SmartDashboard.clearPersistent("Auto Mode");
-      SmartDashboard.putData("Auto Mode", autoChooser2);
+      SmartDashboard.putData("Comp Auto", autoChooser2);
 /*
       Command straightAndScoreAtSelectedLevel = new SequentialCommandGroup(
          m_arm.moveArmToNeutralCmd()
@@ -144,7 +144,6 @@ public class RobotContainer {
          ,new autoStraightToSelectedLevel(drivebase, m_arm)
          ,new PathPlannerAuto("fromFrontScoreToRight")
          ,m_arm.moveArmToNeutralCmd()
-
       );
 
       autoChooser2.addOption("forward3ft", new PathPlannerAuto("driveForwards3ft"));
