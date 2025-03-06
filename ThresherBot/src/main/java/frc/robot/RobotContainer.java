@@ -146,7 +146,8 @@ public class RobotContainer {
          ,m_arm.moveArmToNeutralCmd()
       );
 
-      autoChooser2.addOption("forward3ft", new PathPlannerAuto("driveForwards3ft"));
+      autoChooser2.setDefaultOption("driveForwards3ft", new PathPlannerAuto("driveForwards3ft"));
+      //autoChooser2.addOption("forward3ft", new PathPlannerAuto("driveForwards3ft"));
       autoChooser2.addOption("Straight L2 -> Left", straightScoreL2left);
       autoChooser2.addOption("Straight L3 -> Left", straightScoreL3left);
       autoChooser2.addOption("Straight L4 -> Left", straightScoreL4left);
@@ -155,7 +156,6 @@ public class RobotContainer {
       autoChooser2.addOption("Straight L4 -> Right", straightScoreL4right);
       autoChooser2.addOption("DEBUG: L4Test", straightScoreL4_TEST);
       autoChooser2.addOption("scoreOnJ4 - RISKY", new PathPlannerAuto("driveToJFromHomeAndL4"));
-      autoChooser2.setDefaultOption("Straight L4 -> Left", straightScoreL4left);
    }
 
    private void configureBindings()

@@ -91,7 +91,7 @@ public final class Constants
       public static final double WRIST_POS_MAX_ANGLE = 215.0;
       public static final double WRIST_POS_ELV_SAFE = 15.0; // Minimum arm angle before elevator can move down
       public static final double WRIST_POS_SCORE_PREP_L2 = 20.0;
-      public static final double WRIST_POS_SCORE_END_L2 = 70.0;
+      public static final double WRIST_POS_SCORE_END_L2 = 73.0;
       public static final double WRIST_POS_SCORE_PREP_L3 = 153.0;
       public static final double WRIST_POS_SCORE_END_L3 = 75.0;
       public static final double WRIST_POS_SCORE_PREP_L4 = 153.0;
