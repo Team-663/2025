@@ -23,6 +23,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -404,7 +405,7 @@ public class Arm extends SubsystemBase
       return Commands.sequence(
          moveArmToNeutralCmd()
          ,new WaitCommand(0.2)
-         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
+         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN).withTimeout(0.75)
          ,new WaitCommand(0.1)
          ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
          ///new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
@@ -599,6 +600,9 @@ public class Arm extends SubsystemBase
       fx_cfg.Voltage.withPeakForwardVoltage(Volts.of(12 * ArmConstants.WRIST_MAX_OUTPUT_UP))
          .withPeakReverseVoltage(Volts.of(12 * ArmConstants.WRIST_MAX_OUTPUT_DOWN));
 
+      fx_cfg.CurrentLimits.withStatorCurrentLimit(40.0);
+      fx_cfg.CurrentLimits.withStatorCurrentLimitEnable(true);
+
       fx_cfg.withMotorOutput(mconfig);
 
       StatusCode status = m_wrist.getConfigurator().apply(fx_cfg);
@@ -613,6 +617,16 @@ public class Arm extends SubsystemBase
       //m_wrist.setPosition(ArmConstants.WRIST_POS_DOWN);
    }
 
+   /*
+   public void ConfigureWristCurrentLimit(double amps)
+   {
+      TalonFXConfiguration fx_cfg = new TalonFXConfiguration();
+      fx_cfg.CurrentLimits.withStatorCurrentLimit(amps);
+      fx_cfg.CurrentLimits.withStatorCurrentLimitEnable(true);
+      StatusCode status = m_wrist.getConfigurator().apply(fx_cfg);
+   }
+      */
+
    private void UpdateSmartDashboard()
    {
       SmartDashboard.putData("ARM Subsystem", this);
@@ -621,6 +635,8 @@ public class Arm extends SubsystemBase
       SmartDashboard.putNumber("ARM: PID_D", m_elevatorMaster.configAccessor.closedLoop.getD());
       SmartDashboard.putBoolean("ARM: PID ENABLED", m_elevatorUsePid);
       SmartDashboard.putBoolean("ARM: WristLimit", isWristAtLowLimit());
+
+      SmartDashboard.putNumber("ARM: Wrist StatorCurrent", m_wrist.getStatorCurrent().getValueAsDouble());
       dbArmScoreLevel.setInteger(m_armScoreLevel);
       // I don't think we need this, the subsystem is sent to the tab now
       

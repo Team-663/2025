@@ -28,9 +28,9 @@ public class autoStraightToSelectedLevel extends SequentialCommandGroup {
     addCommands(
         m_arm.moveArmToNeutralCmd()
          ,m_arm.armPrepCoralCmd()
-         ,new DriveStraightUntilAtDistCmd(m_swerve, Constants.AUTO_LASER_DIST_AT_BUMPERS, false)
-         ,new WaitCommand(0.5)
-         ,m_arm.armScoreCoralCmd()
+         ,new DriveStraightUntilAtDistCmd(m_swerve, Constants.AUTO_LASER_DIST_AT_BUMPERS, false).withTimeout(4.0)
+         ,new WaitCommand(0.15)
+         ,m_arm.armScoreCoralCmd().withTimeout(3.0)
 
 
     );
