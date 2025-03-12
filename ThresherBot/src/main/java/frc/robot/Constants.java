@@ -65,8 +65,8 @@ public final class Constants
       public static final double WRIST_PID_FF = 0.0;
 
       public static final double WRIST_ERROR_TOLERANCE = 2.5; // degrees
-      public static final double WRIST_MAX_OUTPUT_UP = 0.6;
-      public static final double WRIST_MAX_OUTPUT_DOWN = -0.4;
+      public static final double WRIST_MAX_OUTPUT_UP = 0.75;      // was 0.6 at NH
+      public static final double WRIST_MAX_OUTPUT_DOWN = -0.55;   // was -0.4 at NH
       public static final double WRIST_MAX_OUTPUT_DOWN_VERY_SLOW = -0.2;
 
       public static final double ELEVATOR_PID_P = 0.45;
@@ -75,8 +75,8 @@ public final class Constants
       public static final double ELEVATOR_PID_FF = 0.0;
 
       public static final double ELEVATOR_ERROR_TOLERANCE = 0.5; // inches
-      public static final double ELEVATOR_MAX_OUTPUT_UP = 0.65;
-      public static final double ELEVATOR_MAX_OUTPUT_DOWN = -0.35;
+      public static final double ELEVATOR_MAX_OUTPUT_UP = 0.95;    // was  0.65 at NH
+      public static final double ELEVATOR_MAX_OUTPUT_DOWN = -0.75; // was -0.35 at
       public static final double ELEVATOR_ENC_CONV_FACTOR = ((8.2686718/ELEVATOR_TRANSMISSION_RATIO));
 
       public static final double ELEVATOR_POS_DOWN     = 0.35;

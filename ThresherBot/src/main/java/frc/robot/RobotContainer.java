@@ -172,6 +172,7 @@ public class RobotContainer {
 
       // DRIVER CONTROLS   
       driverXbox.x().onTrue(Commands.runOnce(drivebase::stopSwerveDrive));
+      driverXbox.y().onTrue(Commands.runOnce(drivebase::centerModulesCommand));
 
       driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
 
@@ -196,8 +197,9 @@ public class RobotContainer {
       operatorXbox.b().onTrue(m_arm.scoreOnL3PrepCmd());
       operatorXbox.y().onTrue(m_arm.scoreOnL4PrepCmd());
       operatorXbox.povDown().onTrue(m_arm.moveArmToNeutralCmd());
-      operatorXbox.povLeft().onTrue(m_arm.algaeFromLowerCmd());
-      operatorXbox.povRight().onTrue(m_arm.algaeFromUpperCmd());
+      operatorXbox.povUp().onTrue(m_arm.armStraightUpCmd());
+      //operatorXbox.povLeft().onTrue(m_arm.algaeFromLowerCmd());
+      //operatorXbox.povRight().onTrue(m_arm.algaeFromUpperCmd());
 
       operatorXbox.leftBumper().onTrue(m_arm.armScoreCoralCmd());
       operatorXbox.rightBumper().onTrue(m_arm.wristHomeCmd());
