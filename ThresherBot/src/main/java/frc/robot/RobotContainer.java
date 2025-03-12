@@ -139,6 +139,20 @@ public class RobotContainer {
          ,m_arm.moveArmToNeutralCmd()
       );
 
+      Command straightScoreL4leftThenLoader = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(4)
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
+         ,new PathPlannerAuto("fromFrontScoreToLeftThenLoader")
+         ,m_arm.moveArmToNeutralCmd()
+      );
+
+      Command straightScoreL4rightThenLoader = new SequentialCommandGroup(
+         m_arm.armSetScoreLevelCmd(4)
+         ,new autoStraightToSelectedLevel(drivebase, m_arm)
+         ,new PathPlannerAuto("fromFrontScoreToRightThenLoader")
+         ,m_arm.moveArmToNeutralCmd()
+      );
+
       Command straightScoreL4_TEST = new SequentialCommandGroup(
          m_arm.armSetScoreLevelCmd(4)
          ,new autoStraightToSelectedLevel(drivebase, m_arm)
@@ -154,6 +168,8 @@ public class RobotContainer {
       autoChooser2.addOption("Straight L2 -> Right", straightScoreL2right);
       autoChooser2.addOption("Straight L3 -> Right", straightScoreL3right);
       autoChooser2.addOption("Straight L4 -> Right", straightScoreL4right);
+      autoChooser2.addOption("L4 -> Left then Loader", straightScoreL4leftThenLoader);
+      autoChooser2.addOption("L4 -> Right then Loader", straightScoreL4rightThenLoader);
       autoChooser2.addOption("DEBUG: L4Test", straightScoreL4_TEST);
       autoChooser2.addOption("scoreOnJ4 - RISKY", new PathPlannerAuto("driveToJFromHomeAndL4"));
    }
