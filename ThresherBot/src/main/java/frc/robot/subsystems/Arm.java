@@ -404,9 +404,9 @@ public class Arm extends SubsystemBase
    {
       return Commands.sequence(
          moveArmToNeutralCmd()
-         ,new WaitCommand(0.2)
-         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN).withTimeout(0.75)
          ,new WaitCommand(0.1)
+         ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN).withTimeout(0.75)
+         ,new WaitCommand(0.2)
          ,new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
          ///new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_DOWN)
       ).withName("ArmLoadCoral");
@@ -481,6 +481,14 @@ public class Arm extends SubsystemBase
          new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
          ,new WristHomeLimit(this, ArmConstants.WRIST_MAX_OUTPUT_DOWN_VERY_SLOW)
       ).withName("WristHome");
+   }
+
+   public Command armStraightUpCmd()
+   {
+      return Commands.sequence(
+         new ElevatorToPosCmd(this, ArmConstants.ELEVATOR_POS_NEUTRAL)
+         ,new WristToPosCmd(this, ArmConstants.WRIST_POS_UP)
+      ).withName("ArmStraightUp");
    }
 
    public Command algaeFromLowerCmd()
