@@ -320,7 +320,16 @@ public class Arm extends SubsystemBase
    {
       return m_armScoreLevel;
    }
-
+/*
+   public Command armScoreCoralCmdByXbox()
+   {
+      return Commands.sequence(
+         UpdateWristMaxDownSpeedCommand(ArmConstants.WRIST_MAX_OUTPUT_DOWN_XBOX)
+         ,armScoreCoralCmd()
+         ,UpdateWristMaxDownSpeedCommand(ArmConstants.WRIST_MAX_OUTPUT_DOWN)
+      );
+   }
+*/
    public Command armScoreCoralCmd()
    {
       return new SelectCommand<>(
@@ -583,7 +592,24 @@ public class Arm extends SubsystemBase
          m_wrist.setNeutralMode(NeutralModeValue.Coast);
       }
    }
+/*
+   public Command UpdateWristMaxDownSpeedCommand(double reverseSpeed)
+   {
+      return Commands.runOnce(()->{ConfigureWristMaxDownSpeed(reverseSpeed);})
+                     .withName("SetWristMaxDown");
+   }
 
+   public void ConfigureWristMaxDownSpeed(double reverseSpeed)
+   {
+      TalonFXConfiguration fx_cfg = new TalonFXConfiguration();
+      m_wrist.getConfigurator().refresh(fx_cfg);
+
+      fx_cfg.Voltage.withPeakReverseVoltage(reverseSpeed);
+
+      StatusCode status = m_wrist.getConfigurator().apply(fx_cfg);
+      SmartDashboard.putNumber("MaxWristDown", reverseSpeed);
+   }
+*/
    public void ConfigureWrist()
    {
       MotorOutputConfigs mconfig = new MotorOutputConfigs();
