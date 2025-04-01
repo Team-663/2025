@@ -41,6 +41,7 @@ import frc.robot.commands.arm.WristToPosCmd;
 import frc.robot.commands.arm.WristHomeLimit;
 import frc.robot.commands.drivebase.RotateAndAlignToTag;
 import frc.robot.commands.auto.autoStraightToSelectedLevel;
+import frc.robot.commands.drivebase.TranslateSlowlyCmd;
 import swervelib.SwerveDrive;
 import swervelib.SwerveInputStream;
 
@@ -197,6 +198,9 @@ public class RobotContainer {
       driverXbox.rightBumper().whileTrue(new RotateAndAlignToTag(drivebase, ()->driverXbox.getLeftY()*-1.0, Constants.DrivebaseConstants.LL_TX_OFFSET_RIGHT_CORAL_AT_36IN, false));
       driverXbox.a().whileTrue(new RotateAndAlignToTag(drivebase, ()->driverXbox.getLeftY()*-1.0, 0.0, false));
       
+      driverXbox.leftTrigger(0.05).whileTrue(new TranslateSlowlyCmd(drivebase, ()->driverXbox.getLeftTriggerAxis()));
+      driverXbox.rightTrigger(0.05).whileTrue(new TranslateSlowlyCmd(drivebase, ()->driverXbox.getRightTriggerAxis() * -1.0));
+
       // OPERATOR CONTROLS
       operatorXbox.axisGreaterThan(XboxController.Axis.kLeftY.value, 0.2)
          .or(operatorXbox.axisLessThan(XboxController.Axis.kLeftY.value, -0.2))
@@ -218,6 +222,7 @@ public class RobotContainer {
       //operatorXbox.povRight().onTrue(m_arm.algaeFromUpperCmd());
 
       operatorXbox.leftBumper().onTrue(m_arm.armScoreCoralCmd());
+      operatorXbox.leftTrigger(0.1).onTrue(m_arm.armScoreCoralCmd());
       operatorXbox.rightBumper().onTrue(m_arm.wristHomeCmd());
    
    }
@@ -246,4 +251,5 @@ public class RobotContainer {
       //m_arm.setWristHere();
       m_arm.setArmSafe();
    }
+
 }

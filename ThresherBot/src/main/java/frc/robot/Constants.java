@@ -17,6 +17,8 @@ public final class Constants
    public static final double AUTO_MAX_STRAFE_CHASSIS_SPEED = Units.feetToMeters(3.0); // 3 ft/s max chassis speed in auto
    public static final double AUTO_MAX_DRIVE_CHASSIS_SPEED = Units.feetToMeters(3.0); // 3 ft/s max chassis speed in auto
    public static final double AUTO_LASER_DIST_AT_BUMPERS = 2.5;
+
+   public static final double DRIVE_SLOW_TRANSLATE_SCALE = 0.15;
    // CAN IDs HERE
    // BackLeftDrive/Angle:    4,  5
    // BackRightDrive/Angle:   6,  7
@@ -66,7 +68,8 @@ public final class Constants
 
       public static final double WRIST_ERROR_TOLERANCE = 2.5; // degrees
       public static final double WRIST_MAX_OUTPUT_UP = 0.75;      // was 0.6 at NH
-      public static final double WRIST_MAX_OUTPUT_DOWN = -0.55;   // was -0.4 at NH
+      public static final double WRIST_MAX_OUTPUT_DOWN = -0.50;   // was -0.4 at NH
+      public static final double WRIST_MAX_OUTPUT_DOWN_XBOX = -0.40; // Slow this down for when drivers are scoring
       public static final double WRIST_MAX_OUTPUT_DOWN_VERY_SLOW = -0.2;
 
       public static final double ELEVATOR_PID_P = 0.45;
